@@ -98,8 +98,8 @@ $result = mysqli_query($conn, $sql);
 }
 
 .dropdown-button {
-  background: #fff8c6;     
-  color: #666;
+  background: #FFF7B0;     
+  color: #989898;
   padding: 10px 18px;
   font-size: 16px;
   font-weight: bold;
@@ -111,6 +111,7 @@ $result = mysqli_query($conn, $sql);
 
 .dropdown-button .arrow {
   margin-left: 6px;
+  color: #989898;
 }
 
 .dropdown-content {
@@ -118,7 +119,7 @@ $result = mysqli_query($conn, $sql);
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: #fff8c6;
+  background-color: #FFF7B0;
   border-radius: 6px;
   box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
   min-width: 160px;
@@ -127,7 +128,7 @@ $result = mysqli_query($conn, $sql);
 }
 
 .dropdown-content a {
-  color: #444;
+  color: #989898;
   padding: 10px 20px;
   display: block;
   text-decoration: none;
@@ -135,7 +136,7 @@ $result = mysqli_query($conn, $sql);
 }
 
 .dropdown-content a:hover {
-  background-color: #f1e6a3;
+  background-color: #FF8991;
 }
 
 .dropdown:hover .dropdown-content {
@@ -143,9 +144,8 @@ $result = mysqli_query($conn, $sql);
 }
 
 
-
     .main-title {
-      font-size: 22px; font-Bold: bold; padding: 20px;
+      font-size: 35px; font-Bold: bold; padding: 20px; color: #1D1D1D;
     }
 
     .ping-list {
@@ -162,7 +162,7 @@ $result = mysqli_query($conn, $sql);
 }
 
     .ping-card {
-      width: 220px; background: white; padding: 12px;
+      width: 220px; background: #FEFEFE; padding: 12px;
       box-shadow: 0 0 5px rgba(0,0,0,0.1); border-radius: 10px;
       display: flex; flex-direction: column; align-items: center;
       font-family: 'MainFont-Bold', sans-serif;
@@ -170,7 +170,7 @@ $result = mysqli_query($conn, $sql);
     .image-wrapper {
       width: 100%;
       height: 160px;
-      background-color: #d3f5ff;
+      background-color: #FEFEFE;
       border-radius: 6px;
       overflow: hidden;
     }
@@ -198,14 +198,14 @@ $result = mysqli_query($conn, $sql);
 
     .meta-tags {
   display: grid;
-  color: white !important;     
+  color: #FEFEFE !important;     
   grid-template-columns: repeat(2, auto); /* 2열 */
   gap: 6px;
 }
 
 .meta-tags div {
-  background: #888;
-  color: white;
+  background: #989898;
+  color: #FEFEFE;
   padding: 4px 10px;
   font-size: 13px;
   font-weight: bold;
@@ -228,9 +228,9 @@ $result = mysqli_query($conn, $sql);
     }
 
     .emoji-circle {
-      width: 40px;
-      height: 40px;
-      background: #fff799;
+      width: 50px;
+      height: 50px;
+      background: #FFF7B0;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -240,13 +240,13 @@ $result = mysqli_query($conn, $sql);
     }
 
     .emoji-circle img {
-      width: 22px;
-      height: 22px;
+      width: 35px;
+      height: 35px;
     }
 
     .emoji-count {
       font-size: 13px;
-      color: gray;
+      color: #989898 !important; 
       font-weight: bold;
     }
   </style>
