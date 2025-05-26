@@ -316,7 +316,7 @@ $emojiMap = [
 ];
 
 $emojiIndex = isset($row['icon']) ? (int)$row['icon'] : 1;
-$emojiType = isset($emojiMap[$emojiIndex]) ? $emojiMap[$emojiIndex] : 'funny';
+$emojiType = isset($emojiMap[$emojiIndex]) ? $emojiMap[$emojiIndex] : 'like';
 $emojiCount = isset($row['icon_count']) ? (int)$row['icon_count'] : 0;// 클릭 수
 
 echo "<div class='emoji-wrapper'>
