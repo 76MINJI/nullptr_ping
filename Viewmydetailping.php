@@ -23,7 +23,7 @@ $stmt = $conn->prepare("
   SELECT ep.base_pkey, ep.sub_pkey, ep.user_pkey, ep.content, be.insert_date
     FROM excuse_posts AS ep
     JOIN base_entity  AS be ON ep.base_pkey = be.pkey
-   WHERE ep.pkey = ?
+    WHERE ep.pkey = ?
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
@@ -91,9 +91,60 @@ $show_form = ($action==='add_review');
 <meta charset="UTF-8">
 <title>View My Detail Ping</title>
 <style>
-  body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5}
-  nav{background:#4cbfee;padding:10px}
-  nav a{color:#fff;margin-right:15px;text-decoration:none;font-weight:bold}
+    @font-face {
+    font-family: 'MainFont-Bold';
+    src: url('fonts/GmarketSansTTFBold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'MainFont-Medium';
+    src: url('fonts/GmarketSansTTFMedium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'MainFont-Light';
+    src: url('fonts/GmarketSansTTFLight.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  /* 2) 사용 */
+  body {
+    margin: 0;
+    background: #f5f5f5;
+    /* 기본 텍스트는 Medium */
+    font-family: 'MainFont-Medium', sans-serif;
+  }
+   nav {
+    display: flex;
+    align-items: center;
+    background: #00C3FF;
+    padding: 10px;
+    font-family: 'MainFont-Bold', sans-serif;
+  }
+  .nav-logo {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .nav-logo img {
+    height: 32px;
+    width: auto;
+  }
+  nav a {
+    color: #f5f5f5;
+    text-decoration: none;
+    font-weight: normal;
+    margin-right: 15px;
+  }
+  /* 마지막 링크에만 자동 마진 */
+  nav a:last-child {
+    margin-left: auto;
+    margin-right: 12px;
+  }
 
   #container{display:flex;padding:20px}
   #detail{flex:1;background:#e0f7ff;padding:20px;border-radius:4px}
@@ -166,9 +217,12 @@ $show_form = ($action==='add_review');
   });
 </script>
 </head>
-<body>
 
+<body>
 <nav>
+  <div class="nav-logo">
+    <img src="img\LOGO_nullptr.png" alt="Logo" />
+  </div>
   <a href="Makeping.php">MAKE PING</a>
   <a href="Myping.php">MY PING</a>
   <a href="Otherping.php">OTHER PING</a>
