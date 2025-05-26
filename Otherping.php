@@ -266,7 +266,7 @@ $result = mysqli_query($conn, $sql);
       <a href="?order=useful">유용해요 순</a>
       <a href="?order=like">웃겨요 순</a>
       <a href="?order=mad">화나요 순</a>
-      <a href="?order=shocking">황당해요 순</a>
+      <a href="?order=dislike">황당해요 순</a>
       <a href="?order=smile">멋져요 순</a>
     </div>
   </div>
