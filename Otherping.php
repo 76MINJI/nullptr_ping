@@ -66,6 +66,7 @@ $result = mysqli_query($conn, $sql);
   <meta charset="UTF-8">
   <title>OTHER PING</title>
   <style>
+    
     body { font-family:GmarketSansTTFBold; background: #f7f7f7; margin: 0; }
     .header {
       background: #00aaff; padding: 15px 20px; color: white;
@@ -74,36 +75,98 @@ $result = mysqli_query($conn, $sql);
     .header .nav a {
       color: white; margin: 0 10px; text-decoration: none; font-weight: bold;
     }
-    .dropdown {
-      position: relative;
-    }
-    .dropdown button {
-      background: #ff7b7b; color: white; padding: 8px 12px; border: none;
-      cursor: pointer; font-weight: bold; border-radius: 4px;
-    }
-    .dropdown-content {
-      display: none; position: absolute; right: 0; background-color: #f9f9f9;
-      min-width: 160px; z-index: 1; box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-    }
-    .dropdown-content a {
-      color: black; padding: 12px 16px; text-decoration: none; display: block;
-    }
-    .dropdown:hover .dropdown-content { display: block; }
+    .sort-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px 24px 0 0;
+  position: relative;
+  z-index: 999;
+}
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'MainFont-Bold', sans-serif;
+  align-items: center;
+  padding: 0 20px;
+  margin-top: 30px;
+}
+
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background: #fff8c6;     
+  color: #666;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;   
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.dropdown-button .arrow {
+  margin-left: 6px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #fff8c6;
+  border-radius: 6px;
+  box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
+  min-width: 160px;
+  padding: 10px 0;
+  font-family: 'MainFont-Medium', sans-serif;
+}
+
+.dropdown-content a {
+  color: #444;
+  padding: 10px 20px;
+  display: block;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1e6a3;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+
 
     .main-title {
-      font-size: 22px; font-weight: bold; padding: 20px;
+      font-size: 22px; font-Bold: bold; padding: 20px;
     }
 
     .ping-list {
       display: flex; flex-wrap: wrap; gap: 20px; padding: 0 20px 40px 20px;
     }
+    .ping-card-link {
+  text-decoration: none;     /* 밑줄 제거 */
+  color: inherit;            /* 부모의 색상 상속 */
+  display: inline-block;     /* 블록처럼 감싸기 */
+}
+.ping-card-link * {
+  color: inherit !important; /* 내부 요소도 링크 색 안 따르게 */
+  text-decoration: none !important;
+}
 
     .ping-card {
       width: 220px; background: white; padding: 12px;
       box-shadow: 0 0 5px rgba(0,0,0,0.1); border-radius: 10px;
       display: flex; flex-direction: column; align-items: center;
+      font-family: 'MainFont-Bold', sans-serif;
     }
-
     .image-wrapper {
       width: 100%;
       height: 160px;
@@ -135,6 +198,7 @@ $result = mysqli_query($conn, $sql);
 
     .meta-tags {
   display: grid;
+  color: white !important;     
   grid-template-columns: repeat(2, auto); /* 2열 */
   gap: 6px;
 }
@@ -188,37 +252,32 @@ $result = mysqli_query($conn, $sql);
   </style>
 </head>
 <body>
+<?php include 'navbar.php'; ?>
 
-
-
-<div class="header">
-  <div class="nav">
-    <a href="#">MAKE PING</a>
-    <a href="#">MY PING</a>
-    <a href="#">OTHER PING</a>
-    <a href="#">PING vs PING</a>
-    <a href="#">MYPAGE</a>
-  </div>
+<!-- <div class="sort-wrapper"> -->
+<div class="header-row">
+  <div class="main-title">다른 사용자들의 핑계 구경하기</div>
   <div class="dropdown">
-    <button>정렬 ▼</button>
+    <button class="dropdown-button">정렬 <span class="arrow">▾</span></button>
     <div class="dropdown-content">
       <a href="?order=latest">최신순</a>
       <a href="?order=review">리뷰순</a>
-      <!-- <a href="?order=reuse">재판 회부 순</a>  재판회부 변수 수정 -->
+      <a href="?order=reuse">재판 회부 순</a>
       <a href="?order=useful">유용해요 순</a>
       <a href="?order=like">웃겨요 순</a>
       <a href="?order=mad">화나요 순</a>
-      <a href="?order=dislike">별로예요 순</a>
-      <a href="?order=smile">인정이에요 순</a>
+      <a href="?order=shocking">황당해요 순</a>
+      <a href="?order=smile">멋져요 순</a>
     </div>
   </div>
 </div>
 
-<div class="main-title">다른 사용자들의 핑계 구경하기</div>
-
 <div class="ping-list">
 <?php
 while ($row = mysqli_fetch_assoc($result)) {
+    $pkey = (int)$row['excuse_pkey'];  // pkey는 각 excuse_posts의 고유 식별자
+
+    echo "<a href='Otherdetailping.php?pkey={$pkey}' class='ping-card-link'>";
     echo "<div class='ping-card'>";
     
     // 이미지 영역
@@ -227,6 +286,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         echo "<img src='" . htmlspecialchars($row['url']) . "' />";
     }
     echo "</div>";
+
 
     // 메타태그 + 날짜
     echo "<div class='meta-emoji-row'>";
