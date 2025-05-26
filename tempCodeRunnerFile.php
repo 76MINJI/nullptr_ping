@@ -5,57 +5,49 @@ include 'db-config.php';
 $order = $_GET['order'] ?? 'latest';
 $order_sql = "";
 switch ($order) {
-  case 'latest':   
-      $order_sql = "ORDER BY be.insert_date DESC"; 
-      break;
-  case 'review':   
-      $order_sql = "ORDER BY s.review_count DESC"; 
-      break;
-
-  case 'useful':   
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 2 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'like':     
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 1 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'dislike':  
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 3 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'smile':    
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 4 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'mad':      
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 5 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-
-  default:         
-      $order_sql = "ORDER BY be.insert_date DESC"; 
+    case 'latest':   $order_sql = "ORDER BY be.insert_date DESC"; break;
+    case 'review':   $order_sql = "ORDER BY s.review_count DESC"; break;
+    case 'reuse':    $order_sql = "ORDER BY s.reuse_count DESC"; break;
+    case 'useful':   $order_sql = "ORDER BY s.useful DESC"; break;
+    case 'funny':    $order_sql = "ORDER BY s.funny DESC"; break;
+    case 'angry':    $order_sql = "ORDER BY s.angry DESC"; break;
+    case 'shocking': $order_sql = "ORDER BY s.shocking DESC"; break;
+    case 'cool':     $order_sql = "ORDER BY s.cool DESC"; break;
+    default:         $order_sql = "ORDER BY be.insert_date DESC";
 }
 
-
 $sql = "SELECT
-  ep.pkey AS excuse_pkey,
-  be.insert_date,
-  pi.url AS url,
-  st_place.sub_classification  AS tag_place,
-  st_person.sub_classification AS tag_person,
-  st_time.sub_classification   AS tag_time,
-  st_mood.sub_classification   AS tag_mood,
-  e.icon,
-  e.icon_count
+ep.pkey AS excuse_pkey,
+be.insert_date,
+pi.url AS url,
+
+-- sub_pkey 비트마스킹 해석
+st_place.sub_classification AS tag_place,
+st_person.sub_classification AS tag_person,
+st_time.sub_classification AS tag_time,
+st_mood.sub_classification AS tag_mood,
+
+-- 가장 많이 클릭된 이모지
+e.icon AS emoji_type,         -- 이모지 번호: 1~5
+e.icon_count AS emoji_count   -- 클릭 수
 FROM excuse_posts ep
 JOIN base_entity be ON ep.base_pkey = be.pkey
 LEFT JOIN post_images pi ON ep.image_pkey = pi.pkey
-LEFT JOIN solutions s ON ep.sol_pkey = s.pkey
-LEFT JOIN sub_tags st_place  ON st_place.pkey  = (s.combo_key >> 18)
-LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
-LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
-LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
-LEFT JOIN emotions e ON ep.emotion_pkey = e.pkey
-{$order_sql}
-LIMIT 20";
+LEFT JOIN sub_tags st_place ON st_place.pkey = (ep.sub_pkey >> 18)
+LEFT JOIN sub_tags st_person ON st_person.pkey = ((ep.sub_pkey >> 12) & 63)
+LEFT JOIN sub_tags st_time ON st_time.pkey = ((ep.sub_pkey >> 6) & 63)
+LEFT JOIN sub_tags st_mood ON st_mood.pkey = (ep.sub_pkey & 63)
 
-
+-- 가장 많이 눌린 이모지 1개만 가져오기
+LEFT JOIN emotions e ON e.base_pkey = ep.base_pkey
+                   AND e.icon_count = (
+                       SELECT MAX(e2.icon_count)
+                       FROM emotions e2
+                       WHERE e2.base_pkey = ep.base_pkey
+                   )
+$order_sql
+LIMIT 20
+";
 
 $result = mysqli_query($conn, $sql);
 ?>
@@ -66,7 +58,7 @@ $result = mysqli_query($conn, $sql);
   <meta charset="UTF-8">
   <title>OTHER PING</title>
   <style>
-    body { font-family:GmarketSansTTFBold; background: #f7f7f7; margin: 0; }
+    body { font-family: sans-serif; background: #f7f7f7; margin: 0; }
     .header {
       background: #00aaff; padding: 15px 20px; color: white;
       display: flex; justify-content: space-between; align-items: center;
@@ -134,22 +126,16 @@ $result = mysqli_query($conn, $sql);
     }
 
     .meta-tags {
-  display: grid;
-  grid-template-columns: repeat(2, auto); /* 2열 */
-  gap: 6px;
-}
+      display: flex; flex-wrap: wrap; gap: 4px;
+    }
 
-.meta-tags div {
-  background: #888;
-  color: white;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: bold;
-  border-radius: 4px;
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-  text-align: center;
-}
-
+    .meta-tags div {
+      background: #888;
+      color: white;
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+    }
 
     .date {
       font-size: 14px;
@@ -204,12 +190,12 @@ $result = mysqli_query($conn, $sql);
     <div class="dropdown-content">
       <a href="?order=latest">최신순</a>
       <a href="?order=review">리뷰순</a>
-      <!-- <a href="?order=reuse">재판 회부 순</a>  재판회부 변수 수정 -->
+      <a href="?order=reuse">재판 회부 순</a>
       <a href="?order=useful">유용해요 순</a>
-      <a href="?order=like">웃겨요 순</a>
-      <a href="?order=mad">화나요 순</a>
-      <a href="?order=dislike">별로예요 순</a>
-      <a href="?order=smile">인정이에요 순</a>
+      <a href="?order=funny">웃겨요 순</a>
+      <a href="?order=angry">화나요 순</a>
+      <a href="?order=shocking">황당해요 순</a>
+      <a href="?order=cool">멋져요 순</a>
     </div>
   </div>
 </div>
@@ -228,44 +214,36 @@ while ($row = mysqli_fetch_assoc($result)) {
     }
     echo "</div>";
 
-    // 메타태그 + 날짜
+    // 메타태그 + 날짜 / 이모지 + 카운트 2열
     echo "<div class='meta-emoji-row'>";
 
-      echo "<div class='meta-left'>";
-      echo "  <div class='meta-tags'>";
-      echo "    <div>" . htmlspecialchars($row['tag_place'] ?? '') . "</div>";
-      echo "    <div>" . htmlspecialchars($row['tag_time'] ?? '') . "</div>";
-      echo "  </div>";
-      echo "  <div class='meta-tags'>";
-      echo "    <div>" . htmlspecialchars($row['tag_person'] ?? '') . "</div>";
-      echo "    <div>" . htmlspecialchars($row['tag_mood'] ?? '') . "</div>";
-      echo "  </div>";
-      echo "  <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>";
-      echo "</div>";
-      
-      
+      // 왼쪽: 태그 + 날짜
+
+      echo "<div class='meta-left'>
+        <div class='meta-tags'>";
+
+        // 동적으로 sub 태그 출력
+        for ($i = 1; $i <= 4; $i++) {
+            $tag = htmlspecialchars($row["sub_tag$i"] ?? '');
+            if (!empty($tag)) {
+                echo "<div>$tag</div>";
+            }
+        }
+
+        echo   "</div>
+                <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>
+              </div>";
 
 
       // 오른쪽: 이모지 + 누른 수
-$emojiMap = [
-  1 => 'like',     // 웃겨요
-  2 => 'useful',    // 유용해요
-  3 => 'dislike',   // 별로예요
-  4 => 'smile',     // 인정이에요
-  5 => 'mad'      // 화나요
-];
-
-$emojiIndex = isset($row['icon']) ? (int)$row['icon'] : 1;
-$emojiType = isset($emojiMap[$emojiIndex]) ? $emojiMap[$emojiIndex] : 'funny';
-$emojiCount = isset($row['icon_count']) ? (int)$row['icon_count'] : 0;// 클릭 수
-
+      $emojiType = htmlspecialchars($row['emoji_type'] ?? 'dislike'); // 기본값 funny
+$emojiCount = (int)($row['emoji_count'] ?? 0); // DB에서 누른 수
 echo "<div class='emoji-wrapper'>
-      <div class='emoji-circle'>
-        <img src='./emotions/{$emojiType}.png' alt='{$emojiType}' style='width:24px; height:24px;' />
-      </div>
-      <div class='emoji-count'>{$emojiCount}</div>
-    </div>";
-
+        <div class='emoji-circle'>
+          <img src='./emotions/$emojiType.png' alt='$emojiType' />
+        </div>
+        <div class='emoji-count'>$emojiCount</div>
+      </div>";
 
 
     echo "</div>"; // meta-emoji-row
