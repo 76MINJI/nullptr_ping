@@ -7,14 +7,14 @@
 //    exit();
 //}
 
-session_start();
-if (!isset($_SESSION['id'])) {
-    echo "<script>
-        alert('로그인이 필요합니다.');
-        location.href='Login.php';
-    </script>";
-    exit;
-}
+// session_start();
+// if (!isset($_SESSION['id'])) {
+//     echo "<script>
+//         alert('로그인이 필요합니다.');
+//         location.href='Login.php';
+//     </script>";
+//     exit;
+// }
 ?>
 
 <!DOCTYPE html>
@@ -120,11 +120,13 @@ if (!isset($_SESSION['id'])) {
 
     .dropdown {
         position: relative;
+        color: #989898; 
     }
 
     .dropdown-toggle {
         background-color: #FFF7B0;
         border: none;
+        color: #989898; 
         padding: 12px 18px;
         font-weight: bold;
         font-size: 15px;
@@ -138,6 +140,7 @@ if (!isset($_SESSION['id'])) {
         position: absolute;
         top: 110%;
         left: 0;
+        color: #989898; 
         background: #FFF7B0;
         min-width: 140px;
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
