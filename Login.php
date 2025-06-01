@@ -3,12 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-    body {
-        font-family: 'GmarketSansMedium', sans-serif;
-        background: #f5f5f5;
-        margin: 0;
-        padding: 0;
-    }
+
     .login-box {
     display: flex;
     margin-top: 0.5px;
@@ -49,7 +44,7 @@
     }
 
     label {
-        font-family: 'GmarketSansBold';
+        font-family: 'MainFont-Bold';
         font-size: 17px;
         display: block;
         margin-bottom: 5px;
@@ -61,7 +56,6 @@
         padding: 12px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 6px;
         background-color: #FFF9C4;
         box-shadow: inset 3px 4px 2px rgba(0, 0, 0, 0.2);
     }
@@ -71,7 +65,7 @@
     .login-btn {
         background-color: #00C3FF;
         color: white;
-        font-family: 'GmarketSansBold';
+        font-family: 'MainFont-Bold';
         font-size: 20px;
         padding: 12px 40px;
         border: none;
