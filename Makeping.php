@@ -37,7 +37,9 @@ if (!isset($_SESSION['id'])) {
     body {
         font-family: 'GmarketSansMedium', sans-serif;
     }
-
+    .main-title {
+        font-size: 35px; font-family: 'MainFont-Bold'; padding: 20px; color: #1D1D1D;
+    }
     .form-row {
         display: flex;
         align-items: flex-start;
@@ -159,6 +161,7 @@ if (!isset($_SESSION['id'])) {
 
 <body>
     <?php include 'navbar.php'; ?>
+    <div class="main-title">나만의 핑계 만들기</div>
 
     <div class="tag-row">
         <label class="situation-label">상황</label>
