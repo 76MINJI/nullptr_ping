@@ -125,235 +125,297 @@ $show_form = ($action==='add_review');
 ?>
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8">
-<title>View My Detail Ping</title>
-<style>
+    <meta charset="UTF-8">
+    <title>View My Detail Ping</title>
+    <style>
     @font-face {
-    font-family: 'MainFont-Bold';
-    src: url('fonts/GmarketSansTTFBold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'MainFont-Medium';
-    src: url('fonts/GmarketSansTTFMedium.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'MainFont-Light';
-    src: url('fonts/GmarketSansTTFLight.ttf') format('truetype');
-    font-weight: 300;
-    font-style: normal;
-  }
+        font-family: 'MainFont-Bold';
+        src: url('fonts/GmarketSansTTFBold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+    }
 
-  /* 2) 사용 */
-  body {
-    margin: 0;
-    background: #f5f5f5;
-    /* 기본 텍스트는 Medium */
-    font-family: 'MainFont-Medium', sans-serif;
-  }
-   nav {
-    display: flex;
-    align-items: center;
-    background: #00C3FF;
-    padding: 10px;
-    font-family: 'MainFont-Bold', sans-serif;
-  }
-  .nav-logo {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 12px;
-    margin-right: 12px;
-  }
-  .nav-logo img {
-    height: 32px;
-    width: auto;
-  }
-  nav a {
-    color: #f5f5f5;
-    text-decoration: none;
-    font-weight: normal;
-    margin-right: 15px;
-  }
-  /* 마지막 링크에만 자동 마진 */
-  nav a:last-child {
-    margin-left: auto;
-    margin-right: 12px;
-  }
+    @font-face {
+        font-family: 'MainFont-Medium';
+        src: url('fonts/GmarketSansTTFMedium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+    }
 
-  #container{display:flex;padding:20px}
-  #detail{flex:1;background:#e0f7ff;padding:20px;border-radius:4px}
-  #sidebar{width:300px;background:#fff7c2;padding:20px;margin-left:20px;border-radius:4px}
+    @font-face {
+        font-family: 'MainFont-Light';
+        src: url('fonts/GmarketSansTTFLight.ttf') format('truetype');
+        font-weight: 300;
+        font-style: normal;
+    }
 
-  /* 리뷰 바 & 리스트 */
-  #reviews-wrapper {
-    margin:0 20px 20px;
-    border:2px solid #4cbfee;
-    border-radius:6px;
-    background:#fff;
-    overflow:hidden;
-  }
-  #review-bar {
-    display:flex; align-items:center;
-    padding:12px 20px;
-    border-bottom:2px solid #4cbfee;
-    background:#fafafa;
-  }
-  .star-rating input{display:none}
-  .star-rating label{
-    font-size:1.5em;color:#ccc;cursor:pointer;
-  }
-  .star-rating input:checked ~ label,
-  .star-rating label:hover,
-  .star-rating label:hover ~ label {
-    color:#f39c12;
-  }
-  #review-bar .prompt {
-    flex:1;
-    margin:0 12px;
-    color:#333;
-  }
-  #review-bar textarea {
-    flex:1;
-    height:80px;
-    padding:8px;
-    margin-right:12px;
-  }
-  #review-bar button {
-    padding:6px 14px;
-    background:#4cbfee;color:#fff;
-    border:none;border-radius:3px;cursor:pointer;
-  }
-  #review-list {
-    max-height:300px;overflow-y:auto;
-  }
-  .review-item {
-    display:flex;align-items:flex-start;
-    padding:12px 20px;border-bottom:1px solid #eee;
-  }
-  .review-item .rating{
-    color:#f39c12;margin-right:12px;font-size:1.1em;
-    min-width:30px;text-align:center;
-  }
-  .review-item .content-wrapper{flex:1}
-  .review-item .username{font-weight:bold;margin-right:6px}
-  .review-item .date{color:#666;font-size:0.85em}
-  .review-item .text{margin:6px 0;line-height:1.4}
-</style>
-<script>
-  function openReviewBar(){
-    document.getElementById('btnAddReview').disabled = true;
-    document.getElementById('review-bar').style.display = 'flex';
-  }
-  window.addEventListener('DOMContentLoaded',()=>{
-    <?php if($show_form):?>
-      openReviewBar();
-    <?php endif;?>
-  });
-</script>
+    /* 2) 사용 */
+    body {
+        margin: 0;
+        background: #f5f5f5;
+        /* 기본 텍스트는 Medium */
+        font-family: 'MainFont-Medium', sans-serif;
+    }
+
+    nav {
+        display: flex;
+        align-items: center;
+        background: #00C3FF;
+        padding: 10px;
+        font-family: 'MainFont-Bold', sans-serif;
+    }
+
+    .nav-logo {
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    .nav-logo img {
+        height: 32px;
+        width: auto;
+    }
+
+    nav a {
+        color: #f5f5f5;
+        text-decoration: none;
+        font-weight: normal;
+        margin-right: 15px;
+    }
+
+    /* 마지막 링크에만 자동 마진 */
+    nav a:last-child {
+        margin-left: auto;
+        margin-right: 12px;
+    }
+
+    #container {
+        display: flex;
+        padding: 20px
+    }
+
+    #detail {
+        flex: 1;
+        background: #e0f7ff;
+        padding: 20px;
+        border-radius: 4px
+    }
+
+    #sidebar {
+        width: 300px;
+        background: #fff7c2;
+        padding: 20px;
+        margin-left: 20px;
+        border-radius: 4px
+    }
+
+    /* 리뷰 바 & 리스트 */
+    #reviews-wrapper {
+        margin: 0 20px 20px;
+        border: 2px solid #4cbfee;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    #review-bar {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 2px solid #4cbfee;
+        background: #fafafa;
+    }
+
+    .star-rating input {
+        display: none
+    }
+
+    .star-rating label {
+        font-size: 1.5em;
+        color: #ccc;
+        cursor: pointer;
+    }
+
+    .star-rating input:checked~label,
+    .star-rating label:hover,
+    .star-rating label:hover~label {
+        color: #f39c12;
+    }
+
+    #review-bar .prompt {
+        flex: 1;
+        margin: 0 12px;
+        color: #333;
+    }
+
+    #review-bar textarea {
+        flex: 1;
+        height: 80px;
+        padding: 8px;
+        margin-right: 12px;
+    }
+
+    #review-bar button {
+        padding: 6px 14px;
+        background: #4cbfee;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    #review-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .review-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .review-item .rating {
+        color: #f39c12;
+        margin-right: 12px;
+        font-size: 1.1em;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    .review-item .content-wrapper {
+        flex: 1
+    }
+
+    .review-item .username {
+        font-weight: bold;
+        margin-right: 6px
+    }
+
+    .review-item .date {
+        color: #666;
+        font-size: 0.85em
+    }
+
+    .review-item .text {
+        margin: 6px 0;
+        line-height: 1.4
+    }
+    </style>
+    <script>
+    function openReviewBar() {
+        document.getElementById('btnAddReview').disabled = true;
+        document.getElementById('review-bar').style.display = 'flex';
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        <?php if($show_form):?>
+        openReviewBar();
+        <?php endif;?>
+    });
+    </script>
 </head>
 
 <body>
-<nav>
-  <div class="nav-logo">
-    <img src="img\LOGO_nullptr.png" alt="Logo" />
-  </div>
-  <a href="Makeping.php">MAKE PING</a>
-  <a href="Myping.php">MY PING</a>
-  <a href="Otherping.php">OTHER PING</a>
-  <a href="Pvp.php">PING vs PING</a>
-  <a href="Mypage.php">MYPAGE</a>
-</nav>
+    <nav>
+        <div class="nav-logo">
+            <img src="img\LOGO_nullptr.png" alt="Logo" />
+        </div>
+        <a href="Makeping.php">MAKE PING</a>
+        <a href="Myping.php">MY PING</a>
+        <a href="Otherping.php">OTHER PING</a>
+        <a href="Pvp.php">PING vs PING</a>
+        <a href="Mypage.php">MYPAGE</a>
+    </nav>
 
-<div id="container">
-  <section id="detail">
-    <!-- 상세 -->
-    <div class="status">
-      <p><strong>상황:</strong>
-      <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
-    </div>
-    <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-    <div class="actions">
-      <button onclick="alert('비공개 준비 중')">비공개</button>
-      <a href="?id=<?= $post_pkey ?>&action=delete"
-        onclick="return confirm('정말 삭제하시겠습니까?');">
-        <button>글 삭제</button>
-      </a>
-      <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
-    </div>
-    <div class="vote-dots">
-      <span>●</span><span>●</span><span>●</span>
-      <span>●</span><span>●</span> <strong>100</strong>
-    </div>
-  </section>
-
-  <aside id="sidebar">
-    <h3>핑계핑의 해답</h3>
-    <!-- 리뷰 추가 버튼만 -->
-    <p style="font-size:1.1em; line-height:1.5em;">
-      <?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
-    </p>
-    <div id="add-review-btn">
-      <button id="btnAddReview"
-              onclick="openReviewBar()"
-              <?= $show_form?'disabled':''?>>
-        리뷰 추가
-      </button>
-    </div>
-    <!-- 리뷰 리스트(항상 노출) -->
-    <div id="review-list">
-      <?php foreach($reviews as $r):?>
-        <div class="review-item">
-          <div class="rating">★ <?=$r['rating']?></div>
-          <div class="content-wrapper">
-            <div>
-              <span class="username"><?=htmlspecialchars($r['username'])?></span>
-              <span class="date"><?=$r['insert_date']?></span>
+    <div id="container">
+        <section id="detail">
+            <!-- 상세 -->
+            <div class="status">
+                <p><strong>상황:</strong>
+                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
-            <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
-          </div>
-        </div>
-      <?php endforeach;?>
-    </div>
-  </aside>
-</div>
+            <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
+            <div class="actions">
+                <button onclick="alert('비공개 준비 중')">비공개</button>
+                <a href="?id=<?= $post_pkey ?>&action=delete" onclick="return confirm('정말 삭제하시겠습니까?');">
+                    <button>글 삭제</button>
+                </a>
+                <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
+            </div>
+            <div class="vote-dots">
+                <span>●</span><span>●</span><span>●</span>
+                <span>●</span><span>●</span> <strong>100</strong>
+            </div>
+        </section>
 
-<!-- 리뷰 작성 폼 & 리스트 전체 밑에 배치 -->
-<section id="reviews-wrapper">
-  <div id="review-bar" style="display:none;">
-    <form method="post" action="?id=<?= $post_pkey ?>&action=add_review" style="display:flex;flex:1;">
-      <div class="star-rating">
-        <?php for($i=5;$i>=1;$i--):?>
-          <input type="radio" id="r<?=$i?>" name="rating" value="<?=$i?>"
-            <?= (isset($_POST['rating'])&&$_POST['rating']==$i)?'checked':''?>>
-          <label for="r<?=$i?>">★</label>
-        <?php endfor;?>
-      </div>
-      <textarea name="comment" placeholder="나의 핑계 사용 리뷰 남기기"><?=htmlspecialchars($_POST['comment']??'')?></textarea>
-      <button type="submit" name="submit_review">등록</button>
-    </form>
-  </div>
-  <div id="review-list">
-    <?php foreach($reviews as $r):?>
-      <div class="review-item">
-        <div class="rating">★ <?=$r['rating']?></div>
-        <div class="content-wrapper">
-          <div>
-            <span class="username"><?=htmlspecialchars($r['username'])?></span>
-            <span class="date"><?=$r['insert_date']?></span>
-          </div>
-          <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
+        <aside id="sidebar">
+            <h3>핑계핑의 해답</h3>
+            <!-- 리뷰 추가 버튼만 -->
+            <p style="font-size:1.1em; line-height:1.5em;">
+                <?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
+            </p>
+            <div id="add-review-btn">
+                <button id="btnAddReview" onclick="openReviewBar()" <?= $show_form?'disabled':''?>>
+                    리뷰 추가
+                </button>
+            </div>
+            <!-- 리뷰 리스트(항상 노출) -->
+            <div id="review-list">
+                <?php foreach($reviews as $r):?>
+                <div class="review-item">
+                    <div class="rating">★ <?=$r['rating']?></div>
+                    <div class="content-wrapper">
+                        <div>
+                            <span class="username"><?=htmlspecialchars($r['username'])?></span>
+                            <span class="date"><?=$r['insert_date']?></span>
+                        </div>
+                        <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
+                    </div>
+                </div>
+                <?php endforeach;?>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 리뷰 작성 폼 & 리스트 전체 밑에 배치 -->
+    <section id="reviews-wrapper">
+        <div id="review-bar" style="display:none;">
+            <form method="post" action="?id=<?= $post_pkey ?>&action=add_review" style="display:flex;flex:1;">
+                <div class="star-rating">
+                    <?php for($i=5;$i>=1;$i--):?>
+                    <input type="radio" id="r<?=$i?>" name="rating" value="<?=$i?>"
+                        <?= (isset($_POST['rating'])&&$_POST['rating']==$i)?'checked':''?>>
+                    <label for="r<?=$i?>">★</label>
+                    <?php endfor;?>
+                </div>
+                <textarea name="comment"
+                    placeholder="나의 핑계 사용 리뷰 남기기"><?=htmlspecialchars($_POST['comment']??'')?></textarea>
+                <button type="submit" name="submit_review">등록</button>
+            </form>
         </div>
-      </div>
-    <?php endforeach;?>
-  </div>
-</section>
+        <div id="review-list">
+            <?php foreach($reviews as $r):?>
+            <div class="review-item">
+                <div class="rating">★ <?=$r['rating']?></div>
+                <div class="content-wrapper">
+                    <div>
+                        <span class="username"><?=htmlspecialchars($r['username'])?></span>
+                        <span class="date"><?=$r['insert_date']?></span>
+                    </div>
+                    <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
+                </div>
+            </div>
+            <?php endforeach;?>
+        </div>
+    </section>
 
 </body>
+
 </html>
