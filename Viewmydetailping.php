@@ -20,20 +20,58 @@ if ($action === 'delete') {
 
 // ── 게시물 로드 ──
 $stmt = $conn->prepare("
-  SELECT ep.base_pkey, ep.sub_pkey, ep.user_pkey, ep.content, be.insert_date
+  SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, be.insert_date,
+    s.combo_key, s.sub_pkey
     FROM excuse_posts AS ep
     JOIN base_entity  AS be ON ep.base_pkey = be.pkey
-    WHERE ep.pkey = ?
+  LEFT JOIN solutions AS s ON ep.sol_pkey = s.pkey
+  WHERE ep.pkey = ?
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
-$stmt->bind_result($base_pkey,$sub_pkey,$owner_pkey,$description,$created_at);
+$stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$created_at, $combo_key, $sub_pkey);
 if (!$stmt->fetch()) {
-    $base_pkey   = $sub_pkey = $owner_pkey = 0;
-    $description = "[샘플] 아직 DB에 글이 없습니다.";
-    $created_at  = date('Y-m-d H:i:s');
+  $base_pkey   = $sol_pkey = $owner_pkey = $combo_key = $sub_pkey = 0;
+  $description = "[샘플] 아직 DB에 글이 없습니다.";
+  $created_at  = date('Y-m-d H:i:s');
 }
 $stmt->close();
+function decodeComboKey($combo_key) {
+  $place_pkey  = ($combo_key >> 18) & 0x3F;
+  $person_pkey = ($combo_key >> 12) & 0x3F;
+  $time_pkey   = ($combo_key >> 6)  & 0x3F;
+  $mood_pkey   = $combo_key & 0x3F;
+  
+  return [$place_pkey, $person_pkey, $time_pkey, $mood_pkey];
+}
+
+function getSubTagName($conn, $pkey) {
+  $stmt = $conn->prepare("SELECT sub_classification FROM sub_tags WHERE pkey = ?");
+  $stmt->bind_param("i", $pkey);
+  $stmt->execute();
+  $stmt->bind_result($name);
+  if ($stmt->fetch()) return $name;
+  return null;
+}
+
+list($place_pkey, $person_pkey, $time_pkey, $mood_pkey) = decodeComboKey($combo_key);
+
+$post['tag_place']  = getSubTagName($conn, $place_pkey);
+$post['tag_person'] = getSubTagName($conn, $person_pkey);
+$post['tag_time']   = getSubTagName($conn, $time_pkey);
+$post['tag_mood']   = getSubTagName($conn, $mood_pkey);
+
+// 
+$solution_text = '';
+if ($sol_pkey) {
+    $stmt = $conn->prepare("SELECT content FROM solutions WHERE pkey = ?");
+    $stmt->bind_param("i", $sol_pkey);
+    $stmt->execute();
+    $stmt->bind_result($solution_text);
+    $stmt->fetch();
+    $stmt->close();
+}
+
 
 // ── 리뷰 등록 처리 ──
 $error = '';
@@ -234,10 +272,11 @@ $show_form = ($action==='add_review');
   <section id="detail">
     <!-- 상세 -->
     <div class="status">
-      <span class="tag">장소</span>
-      <span class="tag">시간</span>
-      <span class="tag">사람</span>
-      <span class="tag">무드</span>
+      <p><strong>상황:</strong>
+      <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
     </div>
     <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
     <div class="actions">
@@ -257,6 +296,9 @@ $show_form = ($action==='add_review');
   <aside id="sidebar">
     <h3>핑계핑의 해답</h3>
     <!-- 리뷰 추가 버튼만 -->
+    <p style="font-size:1.1em; line-height:1.5em;">
+      <?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
+    </p>
     <div id="add-review-btn">
       <button id="btnAddReview"
               onclick="openReviewBar()"
