@@ -198,28 +198,28 @@
         </div>
     </div>
 
-    <input type="hidden" name="place" id="place" required />
-    <input type="hidden" name="time" id="time" required />
-    <input type="hidden" name="person" id="person" required />
-    <input type="hidden" name="mood" id="mood" required />
+    <form action="SubmitPost.php" method="POST">
+        <input type="hidden" name="place" id="place" required />
+        <input type="hidden" name="time" id="time" required />
+        <input type="hidden" name="person" id="person" required />
+        <input type="hidden" name="mood" id="mood" required />
 
-
-    <div style="padding: 40px;">
-        <form action="SubmitPost.php" method="POST">
-            <div class="form-row">
-                <label for="content">설명</label>
-                <textarea name="content" id="content" placeholder="핑계가 필요한 상황을 자세히 서술해 주세요.
+        <div style="padding: 40px;">
+            <!-- <form action="SubmitPost.php" method="POST"> -->
+                <div class="form-row">
+                    <label for="content">설명</label>
+                    <textarea name="content" id="content" placeholder="핑계가 필요한 상황을 자세히 서술해 주세요.
 ex) 회식에 너무 가기 싫어요.. 이럴 땐 어떻게 하나요? 도와줘요 핑계핑" required></textarea>
-            </div>
-    </div>
-
-    <div class="button-row">
-        <div class="privacy-buttons">
-            <button type="button" class="privacy-button active" onclick="selectPrivacy(this,1)">공개</button>
-            <button type="button" class="privacy-button" onclick="selectPrivacy(this,0)">비공개</button>
+                </div>
         </div>
-        <input type="submit" class="button-submit" value="글 등록">
-    </div>
+
+        <div class="button-row">
+            <div class="privacy-buttons">
+                <button type="button" class="privacy-button active" onclick="selectPrivacy(this,1)">공개</button>
+                <button type="button" class="privacy-button" onclick="selectPrivacy(this,0)">비공개</button>
+            </div>
+            <input type="submit" class="button-submit" value="글 등록">
+        </div>
     </form>
 
     <script>
