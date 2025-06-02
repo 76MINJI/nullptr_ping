@@ -4,7 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'db-config.php';
 
-$user_pkey = $_SESSION['user_pkey'] ?? 0;
+// 로그인 검사
+if (!isset($_SESSION['id'])) {
+  echo "<script>
+      alert('로그인이 필요합니다.');
+      location.href='Login.php';
+  </script>";
+  exit;
+}
+
+//  로그인된 사용자 기본 ID
+$user_id = intval($_SESSION['user_pkey']);
 
 // 정렬 기준
 $order = $_GET['order'] ?? 'latest';
@@ -57,12 +67,11 @@ LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
 LEFT JOIN emotions e ON ep.emotion_pkey = e.pkey
-WHERE ep.status = 1 AND ep.user_pkey != ?
+WHERE ep.status = 1
 {$order_sql}
 LIMIT 20";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $user_pkey);
 $stmt->execute();
 $result = $stmt->get_result();
 
