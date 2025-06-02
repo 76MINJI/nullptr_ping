@@ -325,7 +325,7 @@ $show_form = ($action==='add_review');
             <img src="img\LOGO_nullptr.png" alt="Logo" />
         </div>
         <a href="Makeping.php">MAKE PING</a>
-        <a href="Myping.php">MY PING</a>
+        <a href="Viewmyping.php">MY PING</a>
         <a href="Otherping.php">OTHER PING</a>
         <a href="Pvp.php">PING vs PING</a>
         <a href="Mypage.php">MYPAGE</a>
