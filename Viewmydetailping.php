@@ -359,90 +359,40 @@ $trial_count = $_SESSION[$trial_session_key] ?? 0;
 </head>
 
 <body>
-<?php include 'navbar.php'; ?>
-<div id="container">
-  <section id="detail">
-    <!-- 상세 -->
-    <div class="status">
-      <p><strong>상황:</strong>
-      <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-      <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
-    </div>
-    <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-    <div class="actions">
-      <button onclick="alert('비공개 준비 중')">비공개</button>
-      <a href="?id=<?= $post_pkey ?>&action=delete"
-        onclick="return confirm('정말 삭제하시겠습니까?');">
-        <button>글 삭제</button>
-      </a>
-      <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
-    </div>
-    <div class="emotions-container">
-  <!-- 유용해요 -->
-  <div class="emotion-item">
-    <img
-      src="emotions/useful.png"
-      alt="유용해요"
-      class="emotion-icon"
-    />
-    <div class="emotion-label">유용해요</div>
-    <div class="emotion-count">100개</div>
-  </div>
-  <!-- 웃겨요 -->
-  <div class="emotion-item">
-    <img
-      src="emotions/smile.png"
-      alt="웃겨요"
-      class="emotion-icon"
-    />
-    <div class="emotion-label">웃겨요</div>
-    <div class="emotion-count">100개</div>
-  </div>
+    <nav>
+        <div class="nav-logo">
+            <img src="img\LOGO_nullptr.png" alt="Logo" />
+        </div>
+        <a href="Makeping.php">MAKE PING</a>
+        <a href="Viewmyping.php">MY PING</a>
+        <a href="Otherping.php">OTHER PING</a>
+        <a href="Pvp.php">PING vs PING</a>
+        <a href="Mypage.php">MYPAGE</a>
+    </nav>
 
-  <!-- 별로예요 -->
-  <div class="emotion-item">
-    <img
-      src="emotions/dislike.png"
-      alt="별로예요"
-      class="emotion-icon"
-    />
-    <div class="emotion-label">별로예요</div>
-    <div class="emotion-count">100개</div>
-  </div>
-
-  <!-- 인정해요 -->
-  <div class="emotion-item">
-    <img
-      src="emotions/useful.png"
-      alt="인정해요"
-      class="emotion-icon"
-    />
-    <div class="emotion-label">인정해요</div>
-    <div class="emotion-count">100개</div>
-  </div>
-
-  <!-- 화나요 -->
-  <div class="emotion-item">
-    <img
-      src="emotions/mad.png"
-      alt="화나요"
-      class="emotion-icon"
-    />
-    <div class="emotion-label">화나요</div>
-    <div class="emotion-count">100개</div>
-  </div>
-</div>
-
-<div class="trial-btn-wrapper">
-        <!-- 클릭 시 동일 페이지로 action=trial 파라미터를 주어 다시 로드 -->
-        <a href="?id=<?= $post_pkey ?>&action=trial">
-          <button class="trial-btn">재판 회부</button>
-        </a>
-        <span class="trial-count"><?= $trial_count ?></span>
-      </div>
-  </section>
+    <div id="container">
+        <section id="detail">
+            <!-- 상세 -->
+            <div class="status">
+                <p><strong>상황:</strong>
+                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+            </div>
+            <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
+            <div class="actions">
+                <button onclick="alert('비공개 준비 중')">비공개</button>
+                <a href="?id=<?= $post_pkey ?>&action=delete" onclick="return confirm('정말 삭제하시겠습니까?');">
+                    <button>글 삭제</button>
+                </a>
+                <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
+            </div>
+            <div class="vote-dots">
+                <span>●</span><span>●</span><span>●</span>
+                <span>●</span><span>●</span> <strong>100</strong>
+            </div>
+        </section>
 
         <aside id="sidebar">
             <h3>핑계핑의 해답</h3>
