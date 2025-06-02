@@ -4,6 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'db-config.php';
 
+$user_pkey = $_SESSION['user_pkey'] ?? 0;
+
 // 정렬 기준
 $order = $_GET['order'] ?? 'latest';
 $order_sql = "";
@@ -55,12 +57,16 @@ LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
 LEFT JOIN emotions e ON ep.emotion_pkey = e.pkey
+WHERE ep.status = 1 AND ep.user_pkey != ?
 {$order_sql}
 LIMIT 20";
 
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_pkey);
+$stmt->execute();
+$result = $stmt->get_result();
 
-
-$result = mysqli_query($conn, $sql);
+// $result = mysqli_query($conn, $sql);
 ?>
 
 <!DOCTYPE html>

@@ -73,6 +73,7 @@
 
         .intro-logo {
             margin-top: 20px;
+            margin-left: 350px;
         }
 
         .intro-logo img {
@@ -104,7 +105,7 @@
             내 화면 속 핑계요정 핑계핑
         </div>
         <div class="intro-logo">
-            <img src="img/LOGO_circle.png" alt="핑계핑 로고" />
+            <img src="img/bubble.png" alt="핑계핑 로고" />
         </div>
     </div>
 </div>

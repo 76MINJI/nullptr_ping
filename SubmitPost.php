@@ -7,11 +7,9 @@ $place   = intval($_POST['place'] ?? 0);
 $time    = intval($_POST['time'] ?? 0);
 $person  = intval($_POST['person'] ?? 0);
 $mood    = intval($_POST['mood'] ?? 0);
-$status  = intval($_POST['status'] ?? 1);  // 공개/비공개
+$status  = intval($_POST['status'] ?? 1);  // 1 공개 0 비공개
 $user_pkey = $_SESSION['user_pkey'] ?? 0;  // 로그인 되어 있다면 해당 값 사용
 
-
-// 유효성 검사
 if (!$content || !$place || !$time || !$person || !$mood) {
     echo "<script>alert('모든 항목을 선택해주세요.'); history.back();</script>";
     exit;
