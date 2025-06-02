@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'db-config.php';
 
-// ✅ 로그인 검사
+// 로그인 검사
 if (!isset($_SESSION['id'])) {
     echo "<script>
         alert('로그인이 필요합니다.');
@@ -13,13 +13,11 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
-$user_id = intval($_SESSION['id']);
+//  로그인된 사용자 기본 ID
+$user_id = intval($_SESSION['user_pkey']);
 
-// ✅ 만약 URL에 user_id가 있으면 그걸 사용 (관리자 용도 or 테스트용)
-if (isset($_GET['user_id'])) {
-    $user_id = intval($_GET['user_id']); // 꼭 intval() 처리!
-}
 
+// ✅ 사용자의 핑계 불러오기 쿼리
 $sql = "SELECT
     be.insert_date,
     ep.rating,
@@ -39,8 +37,11 @@ ORDER BY be.insert_date DESC
 LIMIT 20";
 
 $result = mysqli_query($conn, $sql);
+if (!$result) {
+    die("쿼리 실패: " . mysqli_error($conn));
+}
 
-
+// ✅ 날짜별로 그룹핑
 $pings_by_date = [];
 while ($row = mysqli_fetch_assoc($result)) {
     $date = date('Y-m-d', strtotime($row['insert_date']));
