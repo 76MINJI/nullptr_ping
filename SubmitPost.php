@@ -47,10 +47,6 @@ $img_row = $img_result->fetch_assoc();
 $image_pkey = $img_row['pkey'] ?? null;
 $img_stmt->close();
 
-if (!$image_pkey) {
-    echo "<script>alert('해당 인물에 맞는 이미지가 없습니다.'); history.back();</script>";
-    exit;
-}
 
 $sql = "INSERT INTO excuse_posts (
     base_pkey, sol_pkey, user_pkey, emotion_pkey, image_pkey, judgement_pkey,

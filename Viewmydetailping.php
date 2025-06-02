@@ -20,32 +20,33 @@ if ($action === 'delete') {
 
 // ── 게시물 로드 ──
 $stmt = $conn->prepare("
-  SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, be.insert_date,
-    s.combo_key, s.sub_pkey
-    FROM excuse_posts AS ep
-    JOIN base_entity  AS be ON ep.base_pkey = be.pkey
-  LEFT JOIN solutions AS s ON ep.sol_pkey = s.pkey
-  WHERE ep.pkey = ?
+    SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, be.insert_date,
+        s.combo_key, s.sub_pkey
+        FROM excuse_posts AS ep
+        JOIN base_entity  AS be ON ep.base_pkey = be.pkey
+    LEFT JOIN solutions AS s ON ep.sol_pkey = s.pkey
+    WHERE ep.pkey = ?
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
 $stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$created_at, $combo_key, $sub_pkey);
 if (!$stmt->fetch()) {
-  $base_pkey   = $sol_pkey = $owner_pkey = $combo_key = $sub_pkey = 0;
-  $description = "[샘플] 아직 DB에 글이 없습니다.";
-  $created_at  = date('Y-m-d H:i:s');
+    $base_pkey   = $sol_pkey = $owner_pkey = $combo_key = $sub_pkey = 0;
+    $description = "[샘플] 아직 DB에 글이 없습니다.";
+    $created_at  = date('Y-m-d H:i:s');
 }
 $stmt->close();
 function decodeComboKey($combo_key) {
-  $place_pkey  = ($combo_key >> 18) & 0x3F;
-  $person_pkey = ($combo_key >> 12) & 0x3F;
-  $time_pkey   = ($combo_key >> 6)  & 0x3F;
-  $mood_pkey   = $combo_key & 0x3F;
-  
-  return [$place_pkey, $person_pkey, $time_pkey, $mood_pkey];
+    $place_pkey  = ($combo_key >> 18) & 0x3F;
+    $person_pkey = ($combo_key >> 12) & 0x3F;
+    $time_pkey   = ($combo_key >> 6)  & 0x3F;
+    $mood_pkey   = $combo_key & 0x3F;
+
+    return [$place_pkey, $person_pkey, $time_pkey, $mood_pkey];
 }
 
 function getSubTagName($conn, $pkey) {
+    $name = null;
   $stmt = $conn->prepare("SELECT sub_classification FROM sub_tags WHERE pkey = ?");
   $stmt->bind_param("i", $pkey);
   $stmt->execute();
