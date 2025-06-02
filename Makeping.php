@@ -203,6 +203,7 @@ if (!isset($_SESSION['id'])) {
         <input type="hidden" name="time" id="time" required />
         <input type="hidden" name="person" id="person" required />
         <input type="hidden" name="mood" id="mood" required />
+        <input type="hidden" name="status" id="status" value="1" />
 
         <div style="padding: 40px;">
             <!-- <form action="SubmitPost.php" method="POST"> -->
