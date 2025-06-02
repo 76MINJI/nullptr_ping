@@ -1,4 +1,5 @@
 <?php
+//TODO 임티 개수 관련 수정 필요(테이블 따로 뺄지말지)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -13,9 +14,6 @@ if (!isset($_SESSION['id'])) {
   </script>";
   exit;
 }
-
-//  로그인된 사용자 기본 ID
-// $user_id = intval($_SESSION['user_pkey']);
 
 // 정렬 기준
 $order = $_GET['order'] ?? 'latest';
