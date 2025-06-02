@@ -4,7 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'db-config.php';
 
-// 로그인 검사
+$user_pkey = $_SESSION['user_pkey'] ?? 0;
+
 if (!isset($_SESSION['id'])) {
   echo "<script>
       alert('로그인이 필요합니다.');
@@ -14,7 +15,7 @@ if (!isset($_SESSION['id'])) {
 }
 
 //  로그인된 사용자 기본 ID
-$user_id = intval($_SESSION['user_pkey']);
+// $user_id = intval($_SESSION['user_pkey']);
 
 // 정렬 기준
 $order = $_GET['order'] ?? 'latest';
