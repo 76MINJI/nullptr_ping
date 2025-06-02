@@ -40,11 +40,15 @@ require_once __DIR__ . '/db-config.php';
   .nav-logo img {
     height: 32px;
     margin: 0 12px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
   nav a {
     color: #fff;
     text-decoration: none;
     margin-right: 15px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
   nav a:last-child {
     margin-left: auto;

@@ -9,6 +9,22 @@ $user_pkey  = 1;
 $post_pkey  = intval($_GET['id'] ?? 0);
 $action     = $_GET['action'] ?? '';
 
+// 세션 키로 사용할 문자열 (게시물별로 구분)
+$trial_session_key = "trial_count_{$post_pkey}";
+
+// ── “재판 회부” 클릭 처리 (action=trial) ──
+if ($action === 'trial') {
+    // 세션에 저장된 기존 횟수를 읽어서 +1
+    if (!isset($_SESSION[$trial_session_key])) {
+        $_SESSION[$trial_session_key] = 1;
+    } else {
+        $_SESSION[$trial_session_key]++;
+    }
+    // 클릭 후 다시 상세 페이지로 돌아가기 (action 파라미터 제거)
+    header("Location: Viewmydetailping.php?id={$post_pkey}");
+    exit;
+}
+
 // ── 삭제 로직(action=delete) ──
 if ($action === 'delete') {
     $del = $conn->prepare("DELETE FROM reviews WHERE post_pkey = ?");
@@ -122,6 +138,7 @@ if (count($reviews)===0) {
 }
 
 $show_form = ($action==='add_review');
+$trial_count = $_SESSION[$trial_session_key] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -151,66 +168,88 @@ $show_form = ($action==='add_review');
         font-style: normal;
     }
 
-    /* 2) 사용 */
-    body {
-        margin: 0;
-        background: #f5f5f5;
-        /* 기본 텍스트는 Medium */
-        font-family: 'MainFont-Medium', sans-serif;
+  /* 2) 사용 */
+  body {
+    margin: 0;
+    background: #f5f5f5;
+    /* 기본 텍스트는 Medium */
+    font-family: 'MainFont-Medium', sans-serif;
+  }
+  #container{display:flex;padding:20px}
+  #detail{flex:1;background:#e0f7ff;padding:20px;border-radius:4px}
+  #sidebar{width:300px;background:#fff7c2;padding:20px;margin-left:20px;border-radius:4px}
+
+  .emotions-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;            /* 아이템 간 간격 */
+  padding: 12px;
+  background: #e0f7ff;  /* 원하는 배경색으로 변경 가능 */
+  border-radius: 6px;
+  margin-top: 20px;     /* 상단 콘텐츠와 띄워주기 */
+}
+
+.emotion-item {
+  text-align: center;
+  font-family: 'MainFont-Medium', sans-serif; /* 본문과 같은 메인 폰트 사용 */
+}
+
+.emotion-icon {
+  width: 40px;                /* 동그라미 크기 */
+  height: 40px;
+  border-radius: 50%;         /* 완전히 동그랗게 */
+  background-color: #fff;     /* 흰색 배경(필요없으면 지워도 OK) */
+  padding: 6px;               /* 아이콘 주변 여백 */
+  object-fit: contain;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+
+.emotion-label {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.emotion-count {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* 상세 정보 창을 기준으로, 자식 요소(trial-btn-wrapper)를 절대 위치시킵니다. */
+#detail {
+  position: relative;
+  /* 기존에 있던 padding, background 등은 건드리지 않습니다. */
+}
+
+ /* “재판 회부” 버튼 위치 */
+    .trial-btn-wrapper {
+      position: absolute;
+      bottom: 20px;  /* 상세 박스 하단에서 20px 위쪽 */
+      right: 20px;   /* 상세 박스 오른쪽에서 20px 왼쪽 */
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trial-btn {
+      padding: 8px 16px;
+      background-color: #4cbfee;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .trial-btn:hover {
+      background-color: #3a9dc6;
+    }
+    .trial-count {
+      font-size: 1rem;
+      color: #333;
+      font-weight: bold;
     }
 
-    nav {
-        display: flex;
-        align-items: center;
-        background: #00C3FF;
-        padding: 10px;
-        font-family: 'MainFont-Bold', sans-serif;
-    }
-
-    .nav-logo {
-        display: inline-block;
-        vertical-align: middle;
-        margin-left: 12px;
-        margin-right: 12px;
-    }
-
-    .nav-logo img {
-        height: 32px;
-        width: auto;
-    }
-
-    nav a {
-        color: #f5f5f5;
-        text-decoration: none;
-        font-weight: normal;
-        margin-right: 15px;
-    }
-
-    /* 마지막 링크에만 자동 마진 */
-    nav a:last-child {
-        margin-left: auto;
-        margin-right: 12px;
-    }
-
-    #container {
-        display: flex;
-        padding: 20px
-    }
-
-    #detail {
-        flex: 1;
-        background: #e0f7ff;
-        padding: 20px;
-        border-radius: 4px
-    }
-
-    #sidebar {
-        width: 300px;
-        background: #fff7c2;
-        padding: 20px;
-        margin-left: 20px;
-        border-radius: 4px
-    }
 
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
@@ -320,40 +359,90 @@ $show_form = ($action==='add_review');
 </head>
 
 <body>
-    <nav>
-        <div class="nav-logo">
-            <img src="img\LOGO_nullptr.png" alt="Logo" />
-        </div>
-        <a href="Makeping.php">MAKE PING</a>
-        <a href="Myping.php">MY PING</a>
-        <a href="Otherping.php">OTHER PING</a>
-        <a href="Pvp.php">PING vs PING</a>
-        <a href="Mypage.php">MYPAGE</a>
-    </nav>
+<?php include 'navbar.php'; ?>
+<div id="container">
+  <section id="detail">
+    <!-- 상세 -->
+    <div class="status">
+      <p><strong>상황:</strong>
+      <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+      <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+    </div>
+    <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
+    <div class="actions">
+      <button onclick="alert('비공개 준비 중')">비공개</button>
+      <a href="?id=<?= $post_pkey ?>&action=delete"
+        onclick="return confirm('정말 삭제하시겠습니까?');">
+        <button>글 삭제</button>
+      </a>
+      <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
+    </div>
+    <div class="emotions-container">
+  <!-- 유용해요 -->
+  <div class="emotion-item">
+    <img
+      src="emotions/useful.png"
+      alt="유용해요"
+      class="emotion-icon"
+    />
+    <div class="emotion-label">유용해요</div>
+    <div class="emotion-count">100개</div>
+  </div>
+  <!-- 웃겨요 -->
+  <div class="emotion-item">
+    <img
+      src="emotions/smile.png"
+      alt="웃겨요"
+      class="emotion-icon"
+    />
+    <div class="emotion-label">웃겨요</div>
+    <div class="emotion-count">100개</div>
+  </div>
 
-    <div id="container">
-        <section id="detail">
-            <!-- 상세 -->
-            <div class="status">
-                <p><strong>상황:</strong>
-                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
-            </div>
-            <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-            <div class="actions">
-                <button onclick="alert('비공개 준비 중')">비공개</button>
-                <a href="?id=<?= $post_pkey ?>&action=delete" onclick="return confirm('정말 삭제하시겠습니까?');">
-                    <button>글 삭제</button>
-                </a>
-                <a href="Updateping.php?id=<?= $post_pkey ?>"><button>글 수정</button></a>
-            </div>
-            <div class="vote-dots">
-                <span>●</span><span>●</span><span>●</span>
-                <span>●</span><span>●</span> <strong>100</strong>
-            </div>
-        </section>
+  <!-- 별로예요 -->
+  <div class="emotion-item">
+    <img
+      src="emotions/dislike.png"
+      alt="별로예요"
+      class="emotion-icon"
+    />
+    <div class="emotion-label">별로예요</div>
+    <div class="emotion-count">100개</div>
+  </div>
+
+  <!-- 인정해요 -->
+  <div class="emotion-item">
+    <img
+      src="emotions/useful.png"
+      alt="인정해요"
+      class="emotion-icon"
+    />
+    <div class="emotion-label">인정해요</div>
+    <div class="emotion-count">100개</div>
+  </div>
+
+  <!-- 화나요 -->
+  <div class="emotion-item">
+    <img
+      src="emotions/mad.png"
+      alt="화나요"
+      class="emotion-icon"
+    />
+    <div class="emotion-label">화나요</div>
+    <div class="emotion-count">100개</div>
+  </div>
+</div>
+
+<div class="trial-btn-wrapper">
+        <!-- 클릭 시 동일 페이지로 action=trial 파라미터를 주어 다시 로드 -->
+        <a href="?id=<?= $post_pkey ?>&action=trial">
+          <button class="trial-btn">재판 회부</button>
+        </a>
+        <span class="trial-count"><?= $trial_count ?></span>
+      </div>
+  </section>
 
         <aside id="sidebar">
             <h3>핑계핑의 해답</h3>
