@@ -67,11 +67,12 @@ LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
 LEFT JOIN emotions e ON ep.emotion_pkey = e.pkey
-WHERE ep.status = 1
+WHERE ep.status = 1 AND ep.user_pkey != ?
 {$order_sql}
 LIMIT 20";
 
 $stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_pkey);
 $stmt->execute();
 $result = $stmt->get_result();
 
