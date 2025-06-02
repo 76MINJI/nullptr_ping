@@ -63,8 +63,8 @@ $stmt = $conn->prepare("
     FROM reviews AS r
     JOIN users       AS u  ON r.user_pkey = u.pkey
     JOIN base_entity AS be ON r.base_pkey  = be.pkey
-   WHERE r.post_pkey = ? AND r.status=1
-   ORDER BY be.insert_date DESC
+    WHERE r.post_pkey = ? AND r.status=1
+    ORDER BY be.insert_date DESC
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
