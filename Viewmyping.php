@@ -19,6 +19,7 @@ $user_id = intval($_SESSION['user_pkey']);
 
 // ✅ 사용자의 핑계 불러오기 쿼리
 $sql = "SELECT
+    ep.pkey AS excuse_pkey,
     be.insert_date,
     ep.rating,
     st_place.sub_classification  AS tag_place,
@@ -149,7 +150,9 @@ while ($row = mysqli_fetch_assoc($result)) {
         margin-bottom: 20px;
     }
 
-    .ping-item {
+    a.ping-item {
+        text-decoration: none;
+        color: inherit;
         background-color: transparent;
         border-radius: 6px;
         padding: 6px 8px;
@@ -158,6 +161,10 @@ while ($row = mysqli_fetch_assoc($result)) {
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    a.ping-item:hover {
+        background-color: #f0f0f0;
     }
 
     .ping-item:last-child {
@@ -239,12 +246,12 @@ while ($row = mysqli_fetch_assoc($result)) {
             <h3>나의 핑계 목록</h3>
             <?php foreach ($pings_by_date as $date => $ping_list): ?>
             <?php foreach ($ping_list as $ping): ?>
-            <div class="ping-item">
+            <a class="ping-item" href="Viewmydetailping.php?id=<?= $ping['excuse_pkey'] ?>">
                 <span class="date"><?= date('y/n/j', strtotime($date)) ?></span>
                 <span
                     class="desc"><?= htmlspecialchars($ping['tag_place']) ?>-<?= htmlspecialchars($ping['tag_person']) ?>-<?= htmlspecialchars($ping['tag_time']) ?>-<?= htmlspecialchars($ping['tag_mood']) ?></span>
                 <span class="star">★ <?= intval($ping['rating']) ?></span>
-            </div>
+            </a>
             <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
