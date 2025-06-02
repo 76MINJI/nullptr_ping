@@ -14,6 +14,7 @@ $result_login = 0;
 while($row = mysqli_fetch_array($result)){
     $result_login = 1;
     $_SESSION['id'] = $id;
+    $_SESSION['user_pkey'] = $row['pkey'];    
 }
 
 $link="";
