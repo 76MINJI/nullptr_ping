@@ -19,8 +19,9 @@
 
         .top10-box {
             background: #FFF7B0;
-            padding: 20px 30px;
-            width: 200px;
+            padding: 40px 30px;
+            width: 250px;
+            height: 500px;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
         }
 
@@ -60,13 +61,14 @@
         }
 
         .intro-title {
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 50px;
+            font-family: 'MainFont-Bold';
             margin-bottom: 10px;
         }
 
         .intro-subtitle {
-            font-size: 18px;
+            font-size: 30px;
+            font-family: 'MainFont-Medium';
             color: #444;
             margin-bottom: 30px;
         }
@@ -77,7 +79,7 @@
         }
 
         .intro-logo img {
-            width: 120px;
+            width: 350px;
         }
     </style>
 </head>
