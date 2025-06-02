@@ -45,7 +45,7 @@ if (!isset($_SESSION['id'])) {
     }
 
     .form-row label {
-        font-family: 'GmarketSansBold';
+        font-family: 'Mainfont-Medium';
         font-size: 18px;
         width: 80px;
         margin-top: 8px;
@@ -60,7 +60,7 @@ if (!isset($_SESSION['id'])) {
         resize: none;
         padding: 15px;
         line-height: 1.6;
-        font-family: 'GmarketSansMedium';
+        font-family: 'Mainfont-Medium';
     }
 
     .button-row {
@@ -115,6 +115,8 @@ if (!isset($_SESSION['id'])) {
         flex-wrap: wrap;
         margin-left: 40px;
         margin-right: auto;
+        font-size: 18px;
+        font-family: 'Mainfont-Medium';
     }
 
 
