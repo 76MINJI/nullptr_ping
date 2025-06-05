@@ -41,14 +41,15 @@ if (!$post) {
 }
 
 $current_user_pkey = $_SESSION['user_pkey'] ?? 0;  // 현재 로그인 사용자
+$post_pkey = $pkey;
+$base_pkey = $post['base_pkey'];
 $is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
 
 // ㅡ 이모티콘
 // 글의 pkey는 URL로부터
 // $post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
-$post_pkey = $pkey;
-$base_pkey = $post['base_pkey'];
-$is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
+//$post_pkey = (int)($_GET['id'] ?? 0);
+
 
 // ── 클릭 처리 ──
 $clicked_icon = isset($_GET['icon']) ? (int)$_GET['icon'] : 0;
@@ -89,7 +90,7 @@ $stmt2->bind_param($types, ...$params);
 $stmt2->execute();
 $stmt2->bind_result($iconType, $iconCount);
 while ($stmt2->fetch()) {
-    $emotion_counts[$iconType] = $iconCount;
+  $emotion_counts[$iconType] = $iconCount;
 }
 $stmt2->close();
 
@@ -97,61 +98,120 @@ $stmt2->close();
 // 해당 글의 base_pkey 가져오기
 //$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
 //$stmt = $conn->prepare($sql);
-//$stmt->bind_param("i", $post_pkey);
-//$stmt->execute();
+$stmt = $conn->prepare("SELECT base_pkey, user_pkey FROM excuse_posts WHERE pkey = ?");
+$stmt->bind_param("i", $post_pkey);
+$stmt->execute();
 //$stmt->bind_result($base_pkey);
-//$stmt->fetch();
-//$stmt->close();
+$stmt->bind_result($base_pkey, $owner_user_pkey);
+$stmt->fetch();
+$stmt->close();
 
+// 본인 글 여부
+$is_owner = ($owner_user_pkey === $current_user_pkey);
 
 // ── 리뷰 등록 처리 ──
 $error = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
-    $rating  = intval($_POST['rating'] ?? 0);
-    $comment = trim($_POST['comment'] ?? '');
+  $rating  = intval($_POST['rating'] ?? 0);
+  $comment = trim($_POST['comment'] ?? '');
     if ($rating>=1 && $rating<=5 && $comment!=='') {
-        $ins = $conn->prepare("
-          INSERT INTO reviews
-            (base_pkey, user_pkey, post_pkey, content, rating, status, view_count)
-          VALUES (?, ?, ?, ?, ?, 1, 0)
-        ");
-        $ins->bind_param("iiisi",
-          $base_pkey, $user_pkey, $post_pkey, $comment, $rating
-        );
-        $ins->execute(); $ins->close();
-        header("Location: Viewmydetailping.php?id={$post_pkey}");
-        exit;
-    }
+      $ins = $conn->prepare("
+      INSERT INTO reviews
+      (base_pkey, user_pkey, post_pkey, content, rating, status, view_count)
+      VALUES (?, ?, ?, ?, ?, 1, 0)
+      ");
+      $ins->bind_param("iiisi",
+      $base_pkey, $user_pkey, $post_pkey, $comment, $rating
+    );
+    $ins->execute(); $ins->close();
+    header("Location: Viewmydetailping.php?id={$post_pkey}");
+    exit;
+  }
     $error = "별점(1~5)과 리뷰 내용을 모두 입력해주세요.";
-}
-
-// ── 리뷰 목록 로드 ──
-$reviews = [];
-$stmt = $conn->prepare("
+  }
+  
+  // ── 리뷰 목록 로드 ──
+  $reviews = [];
+  $stmt = $conn->prepare("
   SELECT r.user_pkey, u.name AS username, r.content, r.rating, be.insert_date
     FROM reviews AS r
     JOIN users       AS u  ON r.user_pkey = u.pkey
     JOIN base_entity AS be ON r.base_pkey  = be.pkey
-   WHERE r.post_pkey = ? AND r.status=1
-   ORDER BY be.insert_date DESC
-");
-$stmt->bind_param("i", $post_pkey);
-$stmt->execute();
+    WHERE r.post_pkey = ? AND r.status=1
+    ORDER BY be.insert_date DESC
+    ");
+    $stmt->bind_param("i", $post_pkey);
+    $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
 
 // 더미 리뷰
 if (count($reviews)===0) {
-    $reviews[] = [
-      'user_pkey'=>0,
-      'username'=>'테스트유저',
-      'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-      'rating'=>4,
+  $reviews[] = [
+    'user_pkey'=>0,
+    'username'=>'테스트유저',
+    'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
+    'rating'=>4,
       'insert_date'=>date('Y-m-d H:i:s'),
     ];
+  }
+  
+  // ── 회부 클릭 처리 (본인 글이 아닐 때만 허용) ──
+$clicked_judgement = isset($_GET['judgement']) ? true : false;
+if ($clicked_judgement && !$is_owner) {
+  // 이미 회부한 적 있는지 확인
+  $stmt = $conn->prepare("SELECT pkey FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
+  $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
+  $stmt->execute();
+  $stmt->store_result();
+
+  if ($stmt->num_rows > 0) {
+        // 이미 눌렀다면 취소 (DELETE)
+        $stmt->bind_result($judgement_pkey);
+        $stmt->fetch();
+        $stmt->close();
+
+        $del = $conn->prepare("DELETE FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
+        $del->bind_param("ii", $base_pkey, $current_user_pkey);
+        $del->execute();
+        $del->close();
+    } else {
+        $stmt->close();
+        // 없으면 회부 (INSERT)
+        $ins = $conn->prepare("INSERT INTO judgements (base_pkey, user_pkey, vote_count, judgement_type) VALUES (?, ?, 1, 1)");
+        $ins->bind_param("ii", $base_pkey, $current_user_pkey);
+        $ins->execute();
+        $ins->close();
+    }
+  // $already_judged = $stmt->num_rows > 0;
+  // $stmt->close();
+  // if (!$already_judged) {
+  //     // 회부 INSERT
+  //     $stmt = $conn->prepare("INSERT INTO judgements (base_pkey, user_pkey, vote_count, judgement_type) VALUES (?, ?, 1, 1)");
+  //     $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
+  //     $stmt->execute();
+  //     $stmt->close();
+  // }
+  header("Location: Otherdetailping.php?id={$pkey}");
+  exit;
 }
 
+// ── 회부 수 조회 ──
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
+$stmt->bind_param("i", $base_pkey);
+$stmt->execute();
+$stmt->bind_result($trial_count);
+$stmt->fetch();
+$stmt->close();
+
+// ── 내가 이미 회부했는지 여부 확인 (버튼 비활성화용) ──
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
+$stmt->bind_param("ii", $base_pkey, $current_user_pkey);
+$stmt->execute();
+$stmt->bind_result($already_clicked);
+$stmt->fetch();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -198,30 +258,46 @@ if (count($reviews)===0) {
         color: #666;
     }
 
-    /* ── 재판 회부 버튼 (비활성화 상태) ── */
+    /* ── 재판 회부 버튼  ── */
     .trial-btn-wrapper {
-        position: absolute;
+        /* position: absolute; */
+        margin-left: auto;
         bottom: 20px;  
         right: 20px;   
-        display: flex;
+        /* display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 8px; */
     }
     .trial-btn {
         padding: 8px 16px;
-        background-color: #4cbfee;
-        color: #fff;
+        background-color: #fff7c2;
         border: none;
         border-radius: 4px;
         font-size: 1rem;
-        cursor: default;     /* 클릭 불가 */
-        opacity: 0.6;        /* 비활성화 느낌 */
-    }
-    .trial-count {
-        font-size: 1rem;
-        color: #333;
         font-weight: bold;
+        cursor: pointer;     /* 클릭 불가
+        /*opacity: 0.6;        /* 비활성화 느낌 */
     }
+
+    .trial-btn .label {
+      color: #666;
+      font-weight: bold;
+    }
+    .trial-btn .count {
+      font-size: 1rem;
+      color: #4cbfee;
+      font-weight: bold;
+    }
+    .trial-btn:hover:not([disabled]) {
+    background-color: #fff7c2;
+    }
+
+    .trial-btn[disabled] {
+    opacity: 0.5;
+    /* cursor: not-allowed; */
+    cursor: default;
+    }
+
 
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
@@ -360,14 +436,26 @@ if (count($reviews)===0) {
                 <div class="emotion-label">화나요</div>
                 <div class="emotion-count"><?= $emotion_counts[5] ?>개</div>
             </div>
-        </div>
-
-        <!-- 재판 회부 버튼 (비활성화) -->
+        <!-- 재판 회부 버튼 -->
         <div class="trial-btn-wrapper">
-            <button class="trial-btn" disabled>재판 회부</button>
-            <span class="trial-count"><?= $trial_count ?>회</span>
+          <?php if (!$is_owner): ?>
+            <?php if (!$already_clicked): ?>
+              <a href="?id=<?= $pkey ?>&judgement=1">
+                <button class="trial-btn">
+                  <span class="label">재판 회부 </span>
+                  <span class="count"><?= $trial_count ?></button></span>
+              </a>
+            <?php else: ?>
+              <!-- 이미 회부했으면 클릭 시 JS 경고창만 띄움 -->
+              <button class="trial-btn" onclick="alert('재판 회부는 1회만 가능합니다.')" return false;>
+                <span class="label">재판 회부 </span>
+                <span class="count"><?= $trial_count ?></button></span>
+              </button>
+            <?php endif; ?>
+          <?php endif; ?>
         </div>
-    </section>
+      </div>
+      </section>
 
     <aside id="sidebar">
         <h3>핑계핑의 해답</h3>

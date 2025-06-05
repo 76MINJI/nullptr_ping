@@ -151,6 +151,14 @@ if (count($reviews)===0) {
 }
 
 $show_form = ($action==='add_review');
+
+// ── 회부 수 조회 ──
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
+$stmt->bind_param("i", $base_pkey);
+$stmt->execute();
+$stmt->bind_result($trial_count);
+$stmt->fetch();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -278,27 +286,38 @@ $show_form = ($action==='add_review');
 
     /* ── 재판 회부 버튼 (비활성화 상태) ── */
     .trial-btn-wrapper {
-        position: absolute;
+        margin-left: auto;
         bottom: 20px;  
-        right: 20px;   
-        display: flex;
+        right: 20px;    
+        /* display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 8px; */
     }
     .trial-btn {
         padding: 8px 16px;
-        background-color: #4cbfee;
-        color: #fff;
+        background-color: #fff7c2;
         border: none;
         border-radius: 4px;
         font-size: 1rem;
-        cursor: default;     /* 클릭 불가 */
-        opacity: 0.6;        /* 비활성화 느낌 */
-    }
-    .trial-count {
-        font-size: 1rem;
-        color: #333;
         font-weight: bold;
+        cursor: default;     /* 클릭 불가 */
+        /* opacity: 0.6;        /* 비활성화 느낌 */
+    }
+
+    .trial-btn .label {
+      color: #666;
+      font-weight: bold;
+    }
+    .trial-btn .count {
+      font-size: 1rem;
+      color: #4cbfee;
+      font-weight: bold;
+    }
+
+    .trial-btn[disabled] {
+    opacity: 0.5;
+    /* cursor: not-allowed; */
+    cursor: default;
     }
 
     /* 리뷰 바 & 리스트 */
@@ -432,24 +451,24 @@ $show_form = ($action==='add_review');
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
             <div class="emotions-container">
-            <?php
-              $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
-              $icons_img = ['useful','smile','dislike','useful','mad'];
-              foreach ($icons as $icon => $label):
-            ?>
-            <div class="emotion-item">
-                <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
-                <div class="emotion-label"><?= $label ?></div>
-                <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
+              <?php
+                $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
+                $icons_img = ['useful','smile','dislike','useful','mad'];
+                foreach ($icons as $icon => $label):
+              ?>
+              <div class="emotion-item">
+                  <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
+                  <div class="emotion-label"><?= $label ?></div>
+                  <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
+              </div>
+              <?php endforeach; ?>
+              <!-- 재판 회부 버튼 -->
+              <div class="trial-btn-wrapper">
+                <button class="trial-btn">
+                  <span class="label">재판 회부 </span>
+                  <span class="count"><?= $trial_count ?></button></span>
+              </div>
             </div>
-            <?php endforeach; ?>
-          </div>
-
-        <!-- 재판 회부 버튼 (비활성화) -->
-        <div class="trial-btn-wrapper">
-            <button class="trial-btn" disabled>재판 회부</button>
-            <span class="trial-count"><?= $trial_count ?>회</span>
-        </div>
     </section>
 
         <aside id="sidebar">
