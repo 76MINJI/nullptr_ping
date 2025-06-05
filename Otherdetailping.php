@@ -32,6 +32,20 @@ $stmt->execute();
 $result = $stmt->get_result();
 $post = $result->fetch_assoc();
 
+// ㅡ 이모티콘
+// 글의 pkey는 URL로부터
+$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+
+// 해당 글의 base_pkey 가져오기
+$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $post_pkey);
+$stmt->execute();
+$stmt->bind_result($base_pkey);
+$stmt->fetch();
+$stmt->close();
+
+
 // ── 리뷰 등록 처리 ──
 $error = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
@@ -96,6 +110,65 @@ if (!$post) {
     #detail{flex:1;background:#e0f7ff;padding:20px;border-radius:4px}
     #sidebar{width:300px;background:#fff7c2;padding:20px;margin-left:20px;border-radius:4px}
 
+    .emotions-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;            
+        padding: 12px;
+        background: #e0f7ff;  
+        border-radius: 6px;
+        margin-top: 20px;     
+    }
+    .emotion-item {
+        text-align: center;
+        font-family: 'MainFont-Medium', sans-serif;
+    }
+    .emotion-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #fff;
+        padding: 6px;
+        object-fit: contain;
+        box-shadow: 0 0 4px rgba(0,0,0,0.1);
+        cursor: pointer;
+    }
+    .emotion-label {
+        margin-top: 4px;
+        font-size: 0.85rem;
+        color: #333;
+    }
+    .emotion-count {
+        margin-top: 2px;
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    /* ── 재판 회부 버튼 (비활성화 상태) ── */
+    .trial-btn-wrapper {
+        position: absolute;
+        bottom: 20px;  
+        right: 20px;   
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .trial-btn {
+        padding: 8px 16px;
+        background-color: #4cbfee;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: default;     /* 클릭 불가 */
+        opacity: 0.6;        /* 비활성화 느낌 */
+    }
+    .trial-count {
+        font-size: 1rem;
+        color: #333;
+        font-weight: bold;
+    }
+
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
         margin:0 20px 20px;
@@ -123,12 +196,14 @@ if (!$post) {
         flex:1;
         margin:0 12px;
         color:#333;
+        flex:1; margin:0 12px; color:#333;
     }
     #review-bar textarea {
         flex:1;
         height:80px;
         padding:8px;
         margin-right:12px;
+        flex:1; height:80px; padding:8px; margin-right:12px;
     }
     #review-bar button {
         padding:6px 14px;
@@ -166,10 +241,58 @@ if (!$post) {
             <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
         </div>
     <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($post['post_content']))?></p>
-    <div class="vote-dots">
-      <span>●</span><span>●</span><span>●</span>
-      <span>●</span><span>●</span> <strong>100</strong>
-    </div>
+      <div class="emotions-container">
+            <!-- 1) “유용해요” (icon=1) -->
+            <div class="emotion-item">
+                <a href="?id=<?= $post_pkey ?>&icon=1" title="유용해요 누르기">
+                    <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
+                </a>
+                <div class="emotion-label">유용해요</div>
+                <!-- <div class="emotion-count"><?= $emotion_counts[1] ?>개</div> -->
+            </div>
+
+            <!-- 2) “웃겨요” (icon=2) -->
+            <div class="emotion-item">
+                <a href="?id=<?= $post_pkey ?>&icon=2" title="웃겨요 누르기">
+                    <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
+                </a>
+                <div class="emotion-label">웃겨요</div>
+                <!-- <div class="emotion-count"><?= $emotion_counts[2] ?>개</div> -->
+            </div>
+
+            <!-- 3) “별로예요” (icon=3) -->
+            <div class="emotion-item">
+                <a href="?id=<?= $post_pkey ?>&icon=3" title="별로예요 누르기">
+                    <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
+                </a>
+                <div class="emotion-label">별로예요</div>
+                <!-- <div class="emotion-count"><?= $emotion_counts[3] ?>개</div> -->
+            </div>
+
+            <!-- 4) “인정해요” (icon=4) -->
+            <div class="emotion-item">
+                <a href="?id=<?= $post_pkey ?>&icon=4" title="인정해요 누르기">
+                    <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
+                </a>
+                <div class="emotion-label">인정해요</div>
+                <!-- <div class="emotion-count"><?= $emotion_counts[4] ?>개</div> -->
+            </div>
+
+            <!-- 5) “화나요” (icon=5) -->
+            <div class="emotion-item">
+                <a href="?id=<?= $post_pkey ?>&icon=5" title="화나요 누르기">
+                    <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
+                </a>
+                <div class="emotion-label">화나요</div>
+                <!-- <div class="emotion-count"><?= $emotion_counts[5] ?>개</div> -->
+            </div>
+        </div>
+
+        <!-- 재판 회부 버튼 (비활성화) -->
+        <div class="trial-btn-wrapper">
+            <button class="trial-btn" disabled>재판 회부</button>
+            <span class="trial-count"><?= $trial_count ?>회</span>
+        </div>
     </section>
 
     <aside id="sidebar">
@@ -181,7 +304,7 @@ if (!$post) {
           <button id="btnAddReview"
                   onclick="openReviewBar()"
                   >
-            <!--리뷰 추가 -->
+            리뷰 추가
           </button>
         </div>
         <!-- 리뷰 리스트(항상 노출) -->
@@ -231,5 +354,11 @@ if (!$post) {
         <!— <?php endforeach;?> —>
       </div>
     </section>
+<script>
+function openReviewBar() {
+    document.getElementById('btnAddReview').disabled = true;
+    document.getElementById('review-bar').style.display = 'flex';
+}
+</script>
 </body>
 </html>
