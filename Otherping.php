@@ -297,7 +297,7 @@ $result = $stmt->get_result();
 while ($row = mysqli_fetch_assoc($result)) {
     $pkey = (int)$row['excuse_pkey'];  // pkey는 각 excuse_posts의 고유 식별자
 
-    echo "<a href='Otherdetailping.php?pkey={$pkey}' class='ping-card-link'>";
+    echo "<a href='Otherdetailping.php?id={$pkey}' class='ping-card-link'>";
     echo "<div class='ping-card'>";
     
     // 이미지 영역
