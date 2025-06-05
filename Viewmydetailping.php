@@ -21,7 +21,7 @@ if ($action === 'delete') {
 
 // ── 게시물 로드 ──
 $stmt = $conn->prepare("
-    SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, be.insert_date,
+    SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, ep.status, be.insert_date,
         s.combo_key, s.sub_pkey
         FROM excuse_posts AS ep
         JOIN base_entity  AS be ON ep.base_pkey = be.pkey
@@ -30,7 +30,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
-$stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$created_at, $combo_key, $sub_pkey);
+$stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$post_status, $created_at, $combo_key, $sub_pkey);
 if (!$stmt->fetch()) {
     $base_pkey   = $sol_pkey = $owner_pkey = $combo_key = $sub_pkey = 0;
     $description = "[샘플] 아직 DB에 글이 없습니다.";
@@ -413,6 +413,71 @@ $stmt->close();
         margin: 6px 0;
         line-height: 1.4
     }
+
+    .solution-box {
+      background: white;
+      padding: 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      min-height: 100px;
+    }
+
+    .solution-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #333;
+      white-space: pre-line;
+    }
+    
+    .add-review-btn {
+      align-items: center;
+      background: #4cbfee;
+      color: white;
+    }
+
+    .top-action-bar {
+      display: flex;
+      /* gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+      font-size: 14px; */
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .visibility-status {
+        font-weight: bold;
+        font-size: 1rem;
+        background-color : #fff;
+        color: #4cbfee;
+        border: none;
+        padding: 4px 12px;
+        /* border-radius: 6px; */
+    }
+
+    .post-action {
+      background: #4cbfee;
+      color: white;
+      padding: 6px 14px;
+      /* border-radius: 4px; */
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .post-action:hover {
+      background: #4cbfee;
+    }
+
+    .right-buttons .action-btn {
+      margin-left: 8px;
+      background-color: #4cbfee;
+      color: #fff;
+      padding: 6px 12px;
+      text-decoration: none;
+      /* border-radius: 4px; */
+      font-weight: bold;
+    }
     </style>
     <script>
     function openReviewBar() {
@@ -443,13 +508,20 @@ $stmt->close();
         <section id="detail">
             <!-- 상세 -->
             <div class="status">
-                <p><strong>상황:</strong>
-                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+              <p><strong>상황:</strong>
+                  <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
+            <div class="top-action-bar">
+              <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
+              <div class="right-buttons">
+                <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
+                <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
+              </div>
+            </div>
             <div class="emotions-container">
               <?php
                 $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
@@ -457,9 +529,9 @@ $stmt->close();
                 foreach ($icons as $icon => $label):
               ?>
               <div class="emotion-item">
-                  <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
-                  <div class="emotion-label"><?= $label ?></div>
-                  <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
+                <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
+                <div class="emotion-label"><?= $label ?></div>
+                <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
               </div>
               <?php endforeach; ?>
               <!-- 재판 회부 버튼 -->
@@ -469,21 +541,21 @@ $stmt->close();
                   <span class="count"><?= $trial_count ?></button></span>
               </div>
             </div>
-    </section>
+        </section>
 
         <aside id="sidebar">
             <h3>핑계핑의 해답</h3>
-            <!-- 리뷰 추가 버튼만 -->
-            <p style="font-size:1.1em; line-height:1.5em;">
-                <?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
-            </p>
-            <div id="add-review-btn">
+            <div class="solution-box">
+              <p class="solution-text"><?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
+              </p>
+            </div>
+            <div id="add-review-btn" style="margin-top:12px;">
                 <button id="btnAddReview" onclick="openReviewBar()" <?= $show_form?'disabled':''?>>
                     리뷰 추가
                 </button>
             </div>
             <!-- 리뷰 리스트(항상 노출) -->
-            <div id="review-list">
+            <!-- <div id="review-list">
                 <?php foreach($reviews as $r):?>
                 <div class="review-item">
                     <div class="rating">★ <?=$r['rating']?></div>
@@ -496,7 +568,7 @@ $stmt->close();
                     </div>
                 </div>
                 <?php endforeach;?>
-            </div>
+            </div> -->
         </aside>
     </div>
 
@@ -520,9 +592,10 @@ $stmt->close();
             <?php foreach($reviews as $r):?>
             <div class="review-item">
                 <div class="rating">★ <?=$r['rating']?></div>
+                <!-- <div class="rating">★ <?= (int)($r['rating'] ?? 0) ?></div> -->
                 <div class="content-wrapper">
                     <div>
-                        <span class="username"><?=htmlspecialchars($r['username'])?></span>
+                        <!-- <span class="username"><?=htmlspecialchars($r['username'])?></span> -->
                         <span class="date"><?=$r['insert_date']?></span>
                     </div>
                     <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
