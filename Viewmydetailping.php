@@ -271,7 +271,7 @@ $stmt->close();
         padding: 6px;
         object-fit: contain;
         box-shadow: 0 0 4px rgba(0,0,0,0.1);
-        cursor: pointer;
+        cursor: default;
     }
     .emotion-label {
         margin-top: 4px;
