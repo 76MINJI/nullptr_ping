@@ -247,7 +247,9 @@ $stmt->close();
         background: #fff7c2;
         padding: 20px;
         margin-left: 20px;
-        border-radius: 4px
+        /* border-radius: 4px; */
+        display: flex;
+        flex-direction: column;
     }
 
     .emotions-container {
@@ -364,6 +366,7 @@ $stmt->close();
         height: 80px;
         padding: 8px;
         margin-right: 12px;
+        font-family: 'MainFont-Medium'
     }
 
     #review-bar button {
@@ -417,7 +420,8 @@ $stmt->close();
     .solution-box {
       background: white;
       padding: 14px;
-      border-radius: 6px;
+      /* border-radius: 6px; */
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
       margin-bottom: 12px;
       min-height: 100px;
     }
@@ -429,10 +433,18 @@ $stmt->close();
       white-space: pre-line;
     }
     
-    .add-review-btn {
-      align-items: center;
+    #add-review-btn {
+      text-align: center;
+    }
+
+    #add-review-btn button {
+      padding: 8px 16px;
       background: #4cbfee;
-      color: white;
+      color: #fff;
+      border: none;
+      font-family: 'MainFont-Medium';
+      font-weight : bold;
+      cursor: pointer;
     }
 
     .top-action-bar {
