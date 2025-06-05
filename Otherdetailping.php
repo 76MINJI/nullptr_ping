@@ -3,15 +3,17 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 include 'db-config.php';
 
 // ① URL 파라미터에서 pkey 가져오기
-$pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+$pkey = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($pkey <= 0) {
     echo "잘못된 접근입니다.";
     exit;
 }
 
 // ② 글 내용 불러오기
-$sql = "SELECT 
-            ep.content AS post_content, 
+$sql = "SELECT
+            ep.base_pkey,
+            ep.content AS post_content,
+            ep.user_pkey,
             be.insert_date,
             s.content AS solution_content,  -- ← 해답 본문 가져오기
             st_place.sub_classification  AS tag_place,
@@ -31,19 +33,75 @@ $stmt->bind_param("i", $pkey);
 $stmt->execute();
 $result = $stmt->get_result();
 $post = $result->fetch_assoc();
+$stmt->close();
+
+if (!$post) {
+    echo "존재하지 않는 글입니다.";
+    exit;
+}
+
+$current_user_pkey = $_SESSION['user_pkey'] ?? 0;  // 현재 로그인 사용자
+$is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
 
 // ㅡ 이모티콘
 // 글의 pkey는 URL로부터
-$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+// $post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+$post_pkey = $pkey;
+$base_pkey = $post['base_pkey'];
+$is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
+
+// ── 클릭 처리 ──
+$clicked_icon = isset($_GET['icon']) ? (int)$_GET['icon'] : 0;
+if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
+    $checkSql  = "SELECT pkey, icon_count FROM emotions WHERE base_pkey = ? AND icon = ? LIMIT 1";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->bind_param("ii", $base_pkey, $clicked_icon);
+    $checkStmt->execute();
+    $checkStmt->bind_result($emotion_pkey, $current_count);
+    $exists = $checkStmt->fetch();
+    $checkStmt->close();
+
+    if ($exists) {
+        $new_count = $current_count + 1;
+        $upd = $conn->prepare("UPDATE emotions SET icon_count = ? WHERE pkey = ?");
+        $upd->bind_param("ii", $new_count, $emotion_pkey);
+        $upd->execute();
+        $upd->close();
+    } else {
+        $ins = $conn->prepare("INSERT INTO emotions (base_pkey, icon, icon_count) VALUES (?, ?, 1)");
+        $ins->bind_param("ii", $base_pkey, $clicked_icon);
+        $ins->execute();
+        $ins->close();
+    }
+    header("Location: Otherdetailping.php?id={$post_pkey}");
+    exit;
+}
+
+// ── 이모션 개수 불러오기 ──
+$emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+$placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
+$sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
+$params = array_merge([$base_pkey], array_keys($emotion_counts));
+$types = str_repeat('i', count($params));
+
+$stmt2 = $conn->prepare($sql2);
+$stmt2->bind_param($types, ...$params);
+$stmt2->execute();
+$stmt2->bind_result($iconType, $iconCount);
+while ($stmt2->fetch()) {
+    $emotion_counts[$iconType] = $iconCount;
+}
+$stmt2->close();
+
 
 // 해당 글의 base_pkey 가져오기
-$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $post_pkey);
-$stmt->execute();
-$stmt->bind_result($base_pkey);
-$stmt->fetch();
-$stmt->close();
+//$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
+//$stmt = $conn->prepare($sql);
+//$stmt->bind_param("i", $post_pkey);
+//$stmt->execute();
+//$stmt->bind_result($base_pkey);
+//$stmt->fetch();
+//$stmt->close();
 
 
 // ── 리뷰 등록 처리 ──
@@ -94,10 +152,6 @@ if (count($reviews)===0) {
     ];
 }
 
-if (!$post) {
-    echo "존재하지 않는 글입니다.";
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
@@ -244,47 +298,67 @@ if (!$post) {
       <div class="emotions-container">
             <!-- 1) “유용해요” (icon=1) -->
             <div class="emotion-item">
+              <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=1" title="유용해요 누르기">
-                    <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
+                  <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
                 </a>
-                <div class="emotion-label">유용해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[1] ?>개</div> -->
+              <?php else: ?>
+              <img src="emotions/useful.png" alt="유용해요" class="emotion-icon"> <!-- 본인은 클릭 못함 -->
+            <?php endif; ?>
+            <div class="emotion-label">유용해요</div>
+            <div class="emotion-count"><?= $emotion_counts[1] ?>개</div>
             </div>
 
             <!-- 2) “웃겨요” (icon=2) -->
             <div class="emotion-item">
+              <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=2" title="웃겨요 누르기">
-                    <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
+                  <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
                 </a>
+              <?php else: ?>
+              <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
+              <?php endif; ?>
                 <div class="emotion-label">웃겨요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[2] ?>개</div> -->
+                <div class="emotion-count"><?= $emotion_counts[2] ?>개</div>
             </div>
 
             <!-- 3) “별로예요” (icon=3) -->
             <div class="emotion-item">
+              <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=3" title="별로예요 누르기">
-                    <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
+                  <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
                 </a>
+              <?php else: ?>
+              <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
+              <?php endif; ?>
                 <div class="emotion-label">별로예요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[3] ?>개</div> -->
+                <div class="emotion-count"><?= $emotion_counts[3] ?>개</div>
             </div>
 
             <!-- 4) “인정해요” (icon=4) -->
             <div class="emotion-item">
+              <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=4" title="인정해요 누르기">
-                    <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
+                  <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
                 </a>
+              <?php else: ?>
+              <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
+              <?php endif; ?>
                 <div class="emotion-label">인정해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[4] ?>개</div> -->
+                <div class="emotion-count"><?= $emotion_counts[4] ?>개</div>
             </div>
 
             <!-- 5) “화나요” (icon=5) -->
             <div class="emotion-item">
+              <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=5" title="화나요 누르기">
-                    <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
+                  <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
                 </a>
+              <?php else: ?>
+                <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
+              <?php endif; ?>
                 <div class="emotion-label">화나요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[5] ?>개</div> -->
+                <div class="emotion-count"><?= $emotion_counts[5] ?>개</div>
             </div>
         </div>
 
