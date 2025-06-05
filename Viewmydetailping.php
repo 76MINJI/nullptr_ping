@@ -3,7 +3,8 @@ session_start();
 require_once __DIR__ . '/db-config.php';
 
 // 테스트용 유저
-$user_pkey  = 1;
+// $user_pkey  = 1;
+$user_pkey  = $_SESSION['user_pkey'] ?? 0;
 
 // 파라미터
 $post_pkey  = intval($_GET['id'] ?? 0);
@@ -36,6 +37,7 @@ if (!$stmt->fetch()) {
     $created_at  = date('Y-m-d H:i:s');
 }
 $stmt->close();
+
 function decodeComboKey($combo_key) {
     $place_pkey  = ($combo_key >> 18) & 0x3F;
     $person_pkey = ($combo_key >> 12) & 0x3F;
@@ -56,7 +58,6 @@ function getSubTagName($conn, $pkey) {
 }
 
 list($place_pkey, $person_pkey, $time_pkey, $mood_pkey) = decodeComboKey($combo_key);
-
 $post['tag_place']  = getSubTagName($conn, $place_pkey);
 $post['tag_person'] = getSubTagName($conn, $person_pkey);
 $post['tag_time']   = getSubTagName($conn, $time_pkey);
@@ -75,17 +76,31 @@ if ($sol_pkey) {
 
 // ㅡ 이모티콘
 // 글의 pkey는 URL로부터
-$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+//$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
 
 // 해당 글의 base_pkey 가져오기
-$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $post_pkey);
-$stmt->execute();
-$stmt->bind_result($base_pkey);
-$stmt->fetch();
-$stmt->close();
+//$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
+//$stmt = $conn->prepare($sql);
+//$stmt->bind_param("i", $post_pkey);
+//$stmt->execute();
+//$stmt->bind_result($base_pkey);
+//$stmt->fetch();
+//$stmt->close();
+// 이모티콘 개수 불러오기
+$emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+$placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
+$sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
+$params = array_merge([$base_pkey], array_keys($emotion_counts));
+$types = str_repeat('i', count($params));
 
+$stmt2 = $conn->prepare($sql2);
+$stmt2->bind_param($types, ...$params);
+$stmt2->execute();
+$stmt2->bind_result($iconType, $iconCount);
+while ($stmt2->fetch()) {
+    $emotion_counts[$iconType] = $iconCount;
+}
+$stmt2->close();
 
 // ── 리뷰 등록 처리 ──
 $error = '';
@@ -137,6 +152,7 @@ if (count($reviews)===0) {
 
 $show_form = ($action==='add_review');
 ?>
+
 <!DOCTYPE html>
 <html lang="ko">
 
@@ -415,52 +431,19 @@ $show_form = ($action==='add_review');
                     <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-<div class="emotions-container">
-            <!-- 1) “유용해요” (icon=1) -->
+            <div class="emotions-container">
+            <?php
+              $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
+              $icons_img = ['useful','smile','dislike','useful','mad'];
+              foreach ($icons as $icon => $label):
+            ?>
             <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=1" title="유용해요 누르기">
-                    <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">유용해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[1] ?>개</div> -->
+                <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
+                <div class="emotion-label"><?= $label ?></div>
+                <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
             </div>
-
-            <!-- 2) “웃겨요” (icon=2) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=2" title="웃겨요 누르기">
-                    <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">웃겨요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[2] ?>개</div> -->
-            </div>
-
-            <!-- 3) “별로예요” (icon=3) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=3" title="별로예요 누르기">
-                    <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">별로예요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[3] ?>개</div> -->
-            </div>
-
-            <!-- 4) “인정해요” (icon=4) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=4" title="인정해요 누르기">
-                    <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">인정해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[4] ?>개</div> -->
-            </div>
-
-            <!-- 5) “화나요” (icon=5) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=5" title="화나요 누르기">
-                    <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">화나요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[5] ?>개</div> -->
-            </div>
-        </div>
+            <?php endforeach; ?>
+          </div>
 
         <!-- 재판 회부 버튼 (비활성화) -->
         <div class="trial-btn-wrapper">
