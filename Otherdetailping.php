@@ -108,7 +108,7 @@ $stmt->close();
 
 // 본인 글 여부
 $is_owner = ($owner_user_pkey === $current_user_pkey);
-
+$user_pkey = $_SESSION['user_pkey'] ?? 0;
 // ── 리뷰 등록 처리 ──
 $error = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
       $base_pkey, $user_pkey, $post_pkey, $comment, $rating
     );
     $ins->execute(); $ins->close();
-    header("Location: Viewmydetailping.php?id={$post_pkey}");
+    header("Location: Otherdetailping.php?id={$post_pkey}");
     exit;
   }
     $error = "별점(1~5)과 리뷰 내용을 모두 입력해주세요.";
@@ -218,7 +218,7 @@ $stmt->close();
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>핑계 상세 보기</title>
+  <title>View Other Detail Ping</title>
   <style>
     #container{display:flex;padding:20px}
     #detail{flex:1;background:#e0f7ff;padding:20px;border-radius:4px}
@@ -334,6 +334,7 @@ $stmt->close();
         padding:8px;
         margin-right:12px;
         flex:1; height:80px; padding:8px; margin-right:12px;
+        font-family: 'MainFont-Medium'
     }
     #review-bar button {
         padding:6px 14px;
@@ -355,6 +356,36 @@ $stmt->close();
     .review-item .username{font-weight:bold;margin-right:6px}
     .review-item .date{color:#666;font-size:0.85em}
     .review-item .text{margin:6px 0;line-height:1.4}
+
+    .solution-box {
+      background: white;
+      padding: 14px;
+      /* border-radius: 6px; */
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+      min-height: 100px;
+    }
+
+    .solution-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #333;
+      white-space: pre-line;
+    }
+
+    #add-review-btn {
+      text-align: center;
+    }
+
+    #add-review-btn button {
+      padding: 8px 16px;
+      background: #4cbfee;
+      color: #fff;
+      border: none;
+      font-family: 'MainFont-Medium';
+      font-weight : bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -364,13 +395,13 @@ $stmt->close();
 <div id="container">
     <section id="detail">
         <div class="status">
-            <p><strong>상황:</strong>
-            <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-            <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-            <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-            <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+          <p><strong>상황:</strong>
+          <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+          <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+          <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+          <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
         </div>
-    <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($post['post_content']))?></p>
+      <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($post['post_content']))?></p>
       <div class="emotions-container">
             <!-- 1) “유용해요” (icon=1) -->
             <div class="emotion-item">
@@ -459,18 +490,17 @@ $stmt->close();
 
     <aside id="sidebar">
         <h3>핑계핑의 해답</h3>
-        <p style="white-space: pre-line; font-size: 15px; line-height: 1.6;">
-            <?= htmlspecialchars($post['solution_content'] ?? '해답이 존재하지 않습니다.') ?>
-        </p>
-        <div id="add-review-btn">
-          <button id="btnAddReview"
-                  onclick="openReviewBar()"
-                  >
+        <div class="solution-box">
+              <p class="solution-text"><?= htmlspecialchars($post['solution_content'] ?? '해답이 존재하지 않습니다.') ?>
+              </p>
+            </div>
+        <div id="add-review-btn" style="margin-top:12px;">
+          <button id="btnAddReview" onclick="openReviewBar()">
             리뷰 추가
           </button>
         </div>
         <!-- 리뷰 리스트(항상 노출) -->
-        <div id="review-list">
+        <!-- <div id="review-list">
           <?php foreach($reviews as $r):?>
             <div class="review-item">
               <div class="rating">★ <?=$r['rating']?></div>
@@ -483,7 +513,7 @@ $stmt->close();
               </div>
             </div>
           <?php endforeach;?>
-        </div>
+        </div> -->
       </aside>
 </div>
     <!-- 리뷰 작성 폼 & 리스트 전체 밑에 배치 -->
@@ -507,7 +537,7 @@ $stmt->close();
             <div class="rating">★ <?=$r['rating']?></div>
             <div class="content-wrapper">
               <div>
-                <span class="username"><?=htmlspecialchars($r['username'])?></span>
+                <!-- <span class="username"><?=htmlspecialchars($r['username'])?></span> -->
                 <span class="date"><?=$r['insert_date']?></span>
               </div>
               <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
