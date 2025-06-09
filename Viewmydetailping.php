@@ -3,7 +3,8 @@ session_start();
 require_once __DIR__ . '/db-config.php';
 
 // 테스트용 유저
-$user_pkey  = 1;
+// $user_pkey  = 1;
+$user_pkey  = $_SESSION['user_pkey'] ?? 0;
 
 // 파라미터
 $post_pkey  = intval($_GET['id'] ?? 0);
@@ -20,7 +21,7 @@ if ($action === 'delete') {
 
 // ── 게시물 로드 ──
 $stmt = $conn->prepare("
-    SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, be.insert_date,
+    SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, ep.status, be.insert_date,
         s.combo_key, s.sub_pkey
         FROM excuse_posts AS ep
         JOIN base_entity  AS be ON ep.base_pkey = be.pkey
@@ -29,13 +30,14 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("i", $post_pkey);
 $stmt->execute();
-$stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$created_at, $combo_key, $sub_pkey);
+$stmt->bind_result($base_pkey,$sol_pkey,$owner_pkey,$description,$post_status, $created_at, $combo_key, $sub_pkey);
 if (!$stmt->fetch()) {
     $base_pkey   = $sol_pkey = $owner_pkey = $combo_key = $sub_pkey = 0;
     $description = "[샘플] 아직 DB에 글이 없습니다.";
     $created_at  = date('Y-m-d H:i:s');
 }
 $stmt->close();
+
 function decodeComboKey($combo_key) {
     $place_pkey  = ($combo_key >> 18) & 0x3F;
     $person_pkey = ($combo_key >> 12) & 0x3F;
@@ -56,7 +58,6 @@ function getSubTagName($conn, $pkey) {
 }
 
 list($place_pkey, $person_pkey, $time_pkey, $mood_pkey) = decodeComboKey($combo_key);
-
 $post['tag_place']  = getSubTagName($conn, $place_pkey);
 $post['tag_person'] = getSubTagName($conn, $person_pkey);
 $post['tag_time']   = getSubTagName($conn, $time_pkey);
@@ -75,17 +76,31 @@ if ($sol_pkey) {
 
 // ㅡ 이모티콘
 // 글의 pkey는 URL로부터
-$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
+//$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
 
 // 해당 글의 base_pkey 가져오기
-$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $post_pkey);
-$stmt->execute();
-$stmt->bind_result($base_pkey);
-$stmt->fetch();
-$stmt->close();
+//$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
+//$stmt = $conn->prepare($sql);
+//$stmt->bind_param("i", $post_pkey);
+//$stmt->execute();
+//$stmt->bind_result($base_pkey);
+//$stmt->fetch();
+//$stmt->close();
+// 이모티콘 개수 불러오기
+$emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+$placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
+$sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
+$params = array_merge([$base_pkey], array_keys($emotion_counts));
+$types = str_repeat('i', count($params));
 
+$stmt2 = $conn->prepare($sql2);
+$stmt2->bind_param($types, ...$params);
+$stmt2->execute();
+$stmt2->bind_result($iconType, $iconCount);
+while ($stmt2->fetch()) {
+    $emotion_counts[$iconType] = $iconCount;
+}
+$stmt2->close();
 
 // ── 리뷰 등록 처리 ──
 $error = '';
@@ -136,7 +151,16 @@ if (count($reviews)===0) {
 }
 
 $show_form = ($action==='add_review');
+
+// ── 회부 수 조회 ──
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
+$stmt->bind_param("i", $base_pkey);
+$stmt->execute();
+$stmt->bind_result($trial_count);
+$stmt->fetch();
+$stmt->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="ko">
 
@@ -223,7 +247,9 @@ $show_form = ($action==='add_review');
         background: #fff7c2;
         padding: 20px;
         margin-left: 20px;
-        border-radius: 4px
+        /* border-radius: 4px; */
+        display: flex;
+        flex-direction: column;
     }
 
     .emotions-container {
@@ -247,7 +273,7 @@ $show_form = ($action==='add_review');
         padding: 6px;
         object-fit: contain;
         box-shadow: 0 0 4px rgba(0,0,0,0.1);
-        cursor: pointer;
+        cursor: default;
     }
     .emotion-label {
         margin-top: 4px;
@@ -262,27 +288,38 @@ $show_form = ($action==='add_review');
 
     /* ── 재판 회부 버튼 (비활성화 상태) ── */
     .trial-btn-wrapper {
-        position: absolute;
+        margin-left: auto;
         bottom: 20px;  
-        right: 20px;   
-        display: flex;
+        right: 20px;    
+        /* display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 8px; */
     }
     .trial-btn {
         padding: 8px 16px;
-        background-color: #4cbfee;
-        color: #fff;
+        background-color: #fff7c2;
         border: none;
         border-radius: 4px;
         font-size: 1rem;
-        cursor: default;     /* 클릭 불가 */
-        opacity: 0.6;        /* 비활성화 느낌 */
-    }
-    .trial-count {
-        font-size: 1rem;
-        color: #333;
         font-weight: bold;
+        cursor: default;     /* 클릭 불가 */
+        /* opacity: 0.6;        /* 비활성화 느낌 */
+    }
+
+    .trial-btn .label {
+      color: #666;
+      font-weight: bold;
+    }
+    .trial-btn .count {
+      font-size: 1rem;
+      color: #4cbfee;
+      font-weight: bold;
+    }
+
+    .trial-btn[disabled] {
+    opacity: 0.5;
+    /* cursor: not-allowed; */
+    cursor: default;
     }
 
     /* 리뷰 바 & 리스트 */
@@ -329,6 +366,7 @@ $show_form = ($action==='add_review');
         height: 80px;
         padding: 8px;
         margin-right: 12px;
+        font-family: 'MainFont-Medium'
     }
 
     #review-bar button {
@@ -378,6 +416,80 @@ $show_form = ($action==='add_review');
         margin: 6px 0;
         line-height: 1.4
     }
+
+    .solution-box {
+      background: white;
+      padding: 14px;
+      /* border-radius: 6px; */
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+      min-height: 100px;
+    }
+
+    .solution-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #333;
+      white-space: pre-line;
+    }
+    
+    #add-review-btn {
+      text-align: center;
+    }
+
+    #add-review-btn button {
+      padding: 8px 16px;
+      background: #4cbfee;
+      color: #fff;
+      border: none;
+      font-family: 'MainFont-Medium';
+      font-weight : bold;
+      cursor: pointer;
+    }
+
+    .top-action-bar {
+      display: flex;
+      /* gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+      font-size: 14px; */
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .visibility-status {
+        font-weight: bold;
+        font-size: 1rem;
+        background-color : #fff;
+        color: #4cbfee;
+        border: none;
+        padding: 4px 12px;
+        /* border-radius: 6px; */
+    }
+
+    .post-action {
+      background: #4cbfee;
+      color: white;
+      padding: 6px 14px;
+      /* border-radius: 4px; */
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .post-action:hover {
+      background: #4cbfee;
+    }
+
+    .right-buttons .action-btn {
+      margin-left: 8px;
+      background-color: #4cbfee;
+      color: #fff;
+      padding: 6px 12px;
+      text-decoration: none;
+      /* border-radius: 4px; */
+      font-weight: bold;
+    }
     </style>
     <script>
     function openReviewBar() {
@@ -408,80 +520,54 @@ $show_form = ($action==='add_review');
         <section id="detail">
             <!-- 상세 -->
             <div class="status">
-                <p><strong>상황:</strong>
-                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+              <p><strong>상황:</strong>
+                  <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                  <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-<div class="emotions-container">
-            <!-- 1) “유용해요” (icon=1) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=1" title="유용해요 누르기">
-                    <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">유용해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[1] ?>개</div> -->
+            <div class="top-action-bar">
+              <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
+              <div class="right-buttons">
+                <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
+                <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
+              </div>
             </div>
-
-            <!-- 2) “웃겨요” (icon=2) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=2" title="웃겨요 누르기">
-                    <img src="emotions/smile.png" alt="웃겨요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">웃겨요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[2] ?>개</div> -->
+            <div class="emotions-container">
+              <?php
+                $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
+                $icons_img = ['useful','smile','dislike','useful','mad'];
+                foreach ($icons as $icon => $label):
+              ?>
+              <div class="emotion-item">
+                <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
+                <div class="emotion-label"><?= $label ?></div>
+                <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
+              </div>
+              <?php endforeach; ?>
+              <!-- 재판 회부 버튼 -->
+              <div class="trial-btn-wrapper">
+                <button class="trial-btn">
+                  <span class="label">재판 회부 </span>
+                  <span class="count"><?= $trial_count ?></button></span>
+              </div>
             </div>
-
-            <!-- 3) “별로예요” (icon=3) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=3" title="별로예요 누르기">
-                    <img src="emotions/dislike.png" alt="별로예요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">별로예요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[3] ?>개</div> -->
-            </div>
-
-            <!-- 4) “인정해요” (icon=4) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=4" title="인정해요 누르기">
-                    <img src="emotions/useful.png" alt="인정해요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">인정해요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[4] ?>개</div> -->
-            </div>
-
-            <!-- 5) “화나요” (icon=5) -->
-            <div class="emotion-item">
-                <a href="?id=<?= $post_pkey ?>&icon=5" title="화나요 누르기">
-                    <img src="emotions/mad.png" alt="화나요" class="emotion-icon">
-                </a>
-                <div class="emotion-label">화나요</div>
-                <!-- <div class="emotion-count"><?= $emotion_counts[5] ?>개</div> -->
-            </div>
-        </div>
-
-        <!-- 재판 회부 버튼 (비활성화) -->
-        <div class="trial-btn-wrapper">
-            <button class="trial-btn" disabled>재판 회부</button>
-            <span class="trial-count"><?= $trial_count ?>회</span>
-        </div>
-    </section>
+        </section>
 
         <aside id="sidebar">
             <h3>핑계핑의 해답</h3>
-            <!-- 리뷰 추가 버튼만 -->
-            <p style="font-size:1.1em; line-height:1.5em;">
-                <?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
-            </p>
-            <div id="add-review-btn">
+            <div class="solution-box">
+              <p class="solution-text"><?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
+              </p>
+            </div>
+            <div id="add-review-btn" style="margin-top:12px;">
                 <button id="btnAddReview" onclick="openReviewBar()" <?= $show_form?'disabled':''?>>
                     리뷰 추가
                 </button>
             </div>
             <!-- 리뷰 리스트(항상 노출) -->
-            <div id="review-list">
+            <!-- <div id="review-list">
                 <?php foreach($reviews as $r):?>
                 <div class="review-item">
                     <div class="rating">★ <?=$r['rating']?></div>
@@ -494,7 +580,7 @@ $show_form = ($action==='add_review');
                     </div>
                 </div>
                 <?php endforeach;?>
-            </div>
+            </div> -->
         </aside>
     </div>
 
@@ -518,9 +604,10 @@ $show_form = ($action==='add_review');
             <?php foreach($reviews as $r):?>
             <div class="review-item">
                 <div class="rating">★ <?=$r['rating']?></div>
+                <!-- <div class="rating">★ <?= (int)($r['rating'] ?? 0) ?></div> -->
                 <div class="content-wrapper">
                     <div>
-                        <span class="username"><?=htmlspecialchars($r['username'])?></span>
+                        <!-- <span class="username"><?=htmlspecialchars($r['username'])?></span> -->
                         <span class="date"><?=$r['insert_date']?></span>
                     </div>
                     <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>

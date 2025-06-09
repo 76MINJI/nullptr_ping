@@ -61,9 +61,13 @@
                 text-align: center;
                 margin-top: 12px;
                 font-size: 14px;
-		font-weight: bold;
+		        font-weight: bold;
                 color: #00C3FF;
                 text-decoration: underline;
+            }
+
+            #login {
+                text-align : center;
             }
         </style>
     </head>
@@ -82,7 +86,9 @@
                     <label for="pwd">PWD</label>
                     <input type="password" name="pwd" required>
                 </div>
-                <input type="submit" value="LOGIN">
+                <div id="login">
+                    <input type="submit" value="LOGIN">
+                </div>
                 <div>
                     <a class="signup" href="signup.php">회원가입</a>
                 </div>
