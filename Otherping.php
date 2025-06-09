@@ -1,5 +1,4 @@
 <?php
-//TODO 임티 개수 관련 수정 필요(테이블 따로 뺄지말지)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -30,24 +29,47 @@ switch ($order) {
         ) DESC";
         break;
     
-    
-    
+  // case;
+  case 'useful':
+    $order_sql = "ORDER BY (
+        SELECT COUNT(*)
+        FROM useful_icon ui
+        WHERE ui.excuse_pkey = ep.pkey
+    ) DESC";
+    break;
 
-  case 'useful':   
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 2 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'like':     
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 1 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'dislike':  
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 3 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'smile':    
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 4 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
-  case 'mad':      
-      $order_sql = "ORDER BY (CASE WHEN e.icon = 5 THEN e.icon_count ELSE 0 END) DESC"; 
-      break;
+case 'funny':
+    $order_sql = "ORDER BY (
+        SELECT COUNT(*)
+        FROM funny_icon li
+        WHERE li.excuse_pkey = ep.pkey
+    ) DESC";
+    break;
+
+case 'bad':
+    $order_sql = "ORDER BY (
+        SELECT COUNT(*)
+        FROM bad_icon di
+        WHERE di.excuse_pkey = ep.pkey
+    ) DESC";
+    break;
+
+case 'agree':
+    $order_sql = "ORDER BY (
+        SELECT COUNT(*)
+        FROM agree_icon si
+        WHERE si.excuse_pkey = ep.pkey
+    ) DESC";
+    break;
+
+case 'angry':
+    $order_sql = "ORDER BY (
+        SELECT COUNT(*)
+        FROM angry_icon mi
+        WHERE mi.excuse_pkey = ep.pkey
+    ) DESC";
+    break;
+
 
   default:         
       $order_sql = "ORDER BY be.insert_date DESC"; 
@@ -55,15 +77,13 @@ switch ($order) {
 
 
 $sql = "SELECT
-  ep.pkey AS excuse_pkey,
-  be.insert_date,
-  pi.url AS url,
-  st_place.sub_classification  AS tag_place,
-  st_person.sub_classification AS tag_person,
-  st_time.sub_classification   AS tag_time,
-  st_mood.sub_classification   AS tag_mood,
-  e.icon,
-  e.icon_count
+ep.pkey AS excuse_pkey,
+be.insert_date,
+pi.url AS url,
+st_place.sub_classification  AS tag_place,
+st_person.sub_classification AS tag_person,
+st_time.sub_classification   AS tag_time,
+st_mood.sub_classification   AS tag_mood
 FROM excuse_posts ep
 JOIN base_entity be ON ep.base_pkey = be.pkey
 LEFT JOIN post_images pi ON ep.image_pkey = pi.pkey
@@ -72,7 +92,6 @@ LEFT JOIN sub_tags st_place  ON st_place.pkey  = (s.combo_key >> 18)
 LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
-LEFT JOIN emotions e ON ep.emotion_pkey = e.pkey
 WHERE ep.status = 1 AND ep.user_pkey != ?
 {$order_sql}
 LIMIT 20";
@@ -245,41 +264,12 @@ $result = $stmt->get_result();
       font-weight: bold;
     }
 
-    .emoji-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
 
-    .emoji-circle {
-      width: 50px;
-      height: 50px;
-      background: #FFF7B0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-      cursor: pointer;
-    }
-
-    .emoji-circle img {
-      width: 35px;
-      height: 35px;
-    }
-
-    .emoji-count {
-      font-size: 13px;
-      color: #989898 !important; 
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
 <?php include 'navbar.php'; ?>
 
-<!-- <div class="sort-wrapper"> -->
 <div class="header-row">
   <div class="main-title">다른 사용자들의 핑계 구경하기</div>
   <div class="dropdown">
@@ -289,10 +279,10 @@ $result = $stmt->get_result();
       <a href="?order=review">리뷰순</a>
       <a href="?order=reuse">재판 회부 순</a>
       <a href="?order=useful">유용해요 순</a>
-      <a href="?order=like">웃겨요 순</a>
-      <a href="?order=mad">화나요 순</a>
-      <a href="?order=dislike">황당해요 순</a>
-      <a href="?order=smile">멋져요 순</a>
+      <a href="?order=funny">웃겨요 순</a>
+      <a href="?order=bad">별로예요 순</a>
+      <a href="?order=agree">인정이에요 순</a>
+      <a href="?order=angry">화나요 순</a>
     </div>
   </div>
 </div>
@@ -300,7 +290,7 @@ $result = $stmt->get_result();
 <div class="ping-list">
 <?php
 while ($row = mysqli_fetch_assoc($result)) {
-    $pkey = (int)$row['excuse_pkey'];  // pkey는 각 excuse_posts의 고유 식별자
+    $pkey = (int)$row['excuse_pkey']; 
 
     echo "<a href='Otherdetailping.php?id={$pkey}' class='ping-card-link'>";
     echo "<div class='ping-card'>";
@@ -327,33 +317,6 @@ while ($row = mysqli_fetch_assoc($result)) {
       echo "  </div>";
       echo "  <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>";
       echo "</div>";
-      
-      
-
-
-      // 오른쪽: 이모지 + 누른 수
-$emojiMap = [
-  1 => 'like',     // 웃겨요
-  2 => 'useful',    // 유용해요
-  3 => 'dislike',   // 별로예요
-  4 => 'smile',     // 인정이에요
-  5 => 'mad'      // 화나요
-];
-
-$emojiIndex = isset($row['icon']) ? (int)$row['icon'] : 1;
-$emojiType = isset($emojiMap[$emojiIndex]) ? $emojiMap[$emojiIndex] : 'like';
-$emojiCount = isset($row['icon_count']) ? (int)$row['icon_count'] : 0;// 클릭 수
-
-echo "<div class='emoji-wrapper'>
-      <div class='emoji-circle'>
-        <img src='./emotions/{$emojiType}.png' alt='{$emojiType}' style='width:24px; height:24px;' />
-      </div>
-      <div class='emoji-count'>{$emojiCount}</div>
-    </div>";
-
-
-
-    echo "</div>"; // meta-emoji-row
 
     echo "</div>"; // ping-card
 }
