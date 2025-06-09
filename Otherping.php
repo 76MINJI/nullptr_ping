@@ -22,9 +22,16 @@ switch ($order) {
   case 'latest':   
       $order_sql = "ORDER BY be.insert_date DESC"; 
       break;
-  case 'review':   
-      $order_sql = "ORDER BY s.review_count DESC"; 
-      break;
+  case 'review':
+        $order_sql = "ORDER BY (
+            SELECT COUNT(*)
+            FROM reviews r
+            WHERE r.post_pkey = ep.pkey
+        ) DESC";
+        break;
+    
+    
+    
 
   case 'useful':   
       $order_sql = "ORDER BY (CASE WHEN e.icon = 2 THEN e.icon_count ELSE 0 END) DESC"; 
@@ -170,12 +177,12 @@ $result = $stmt->get_result();
       display: flex; flex-wrap: wrap; gap: 20px; padding: 0 20px 40px 20px;
     }
     .ping-card-link {
-  text-decoration: none;     /* 밑줄 제거 */
-  color: inherit;            /* 부모의 색상 상속 */
-  display: inline-block;     /* 블록처럼 감싸기 */
+  text-decoration: none;     
+  color: inherit;            
+  display: inline-block;     
 }
 .ping-card-link * {
-  color: inherit !important; /* 내부 요소도 링크 색 안 따르게 */
+  color: inherit !important; 
   text-decoration: none !important;
 }
 
@@ -217,7 +224,7 @@ $result = $stmt->get_result();
     .meta-tags {
   display: grid;
   color: #FEFEFE !important;     
-  grid-template-columns: repeat(2, auto); /* 2열 */
+  grid-template-columns: repeat(2, auto); 
   gap: 6px;
 }
 
