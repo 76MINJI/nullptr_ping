@@ -6,7 +6,9 @@ require_once __DIR__ . '/db-config.php';
 <!-- 내비게이션 영역 -->
 <nav>
   <div class="nav-logo">
-    <img src="img/LOGO_nullptr.png" alt="Logo" />
+    <a href="Main.php">
+      <img src="img/LOGO_nullptr.png" alt="Logo" />
+    </a>
   </div>
   <a href="Makeping.php">MAKE PING</a>
   <a href="Viewmyping.php">MY PING</a>
@@ -39,8 +41,8 @@ require_once __DIR__ . '/db-config.php';
   }
   .nav-logo img {
     height: 32px;
-    margin: 0 12px;
-    padding-left: 10px;
+    /* margin: 0 12px; */
+    /* padding-left: 10px; */
     padding-right: 10px;
   }
   nav a {
