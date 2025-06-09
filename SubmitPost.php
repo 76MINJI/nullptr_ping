@@ -49,10 +49,10 @@ $img_stmt->close();
 
 
 $sql = "INSERT INTO excuse_posts (
-    base_pkey, sol_pkey, user_pkey, emotion_pkey, image_pkey, judgement_pkey,
-    content, rating, status, view_count
+    base_pkey, sol_pkey, user_pkey, image_pkey,
+    content, rating, status
 ) VALUES (
-    ?, ?, ?, 1, ?, 1, ?, 3, ?, 0
+    ?, ?, ?, ?, ?, 3, ?
 )";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("iiiisi", $base_pkey, $sol_pkey, $user_pkey, $image_pkey, $content, $status);
