@@ -323,7 +323,7 @@ while ($row = mysqli_fetch_assoc($result)) {
       echo "  </div>";
       echo "  <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>";
       echo "</div>";
-
+    echo "</div>"; // ping-card row 
     echo "</div>"; // ping-card
 }
 ?>
