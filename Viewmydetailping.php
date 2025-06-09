@@ -86,21 +86,39 @@ if ($sol_pkey) {
 //$stmt->bind_result($base_pkey);
 //$stmt->fetch();
 //$stmt->close();
-// 이모티콘 개수 불러오기
-$emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
-$placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
-$sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
-$params = array_merge([$base_pkey], array_keys($emotion_counts));
-$types = str_repeat('i', count($params));
 
-$stmt2 = $conn->prepare($sql2);
-$stmt2->bind_param($types, ...$params);
-$stmt2->execute();
-$stmt2->bind_result($iconType, $iconCount);
-while ($stmt2->fetch()) {
-    $emotion_counts[$iconType] = $iconCount;
+// $emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+// $placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
+// $sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
+// $params = array_merge([$base_pkey], array_keys($emotion_counts));
+// $types = str_repeat('i', count($params));
+
+// $stmt2 = $conn->prepare($sql2);
+// $stmt2->bind_param($types, ...$params);
+// $stmt2->execute();
+// $stmt2->bind_result($iconType, $iconCount);
+// while ($stmt2->fetch()) {
+//     $emotion_counts[$iconType] = $iconCount;
+// }
+// $stmt2->close();
+$icon_tables = [
+    1 => ['label' => '유용해요', 'img' => 'useful',  'table' => 'useful_icon'],
+    2 => ['label' => '웃겨요',   'img' => 'smile',   'table' => 'funny_icon'],
+    3 => ['label' => '별로예요', 'img' => 'dislike', 'table' => 'bad_icon'],
+    4 => ['label' => '인정해요', 'img' => 'useful',  'table' => 'agree_icon'],
+    5 => ['label' => '화나요',   'img' => 'mad',     'table' => 'angry_icon'],
+];
+$emotion_counts = [];
+
+foreach ($icon_tables as $key => $info) {
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM {$info['table']} WHERE base_pkey = ?");
+    $stmt->bind_param("i", $base_pkey);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $emotion_counts[$key] = $count;
+    $stmt->close();
 }
-$stmt2->close();
 
 // ── 리뷰 등록 처리 ──
 $error = '';
@@ -535,16 +553,12 @@ $stmt->close();
               </div>
             </div>
             <div class="emotions-container">
-              <?php
-                $icons = [1=>'유용해요', 2=>'웃겨요', 3=>'별로예요', 4=>'인정해요', 5=>'화나요'];
-                $icons_img = ['useful','smile','dislike','useful','mad'];
-                foreach ($icons as $icon => $label):
-              ?>
-              <div class="emotion-item">
-                <img src="emotions/<?= $icons_img[$icon-1] ?>.png" alt="<?= $label ?>" class="emotion-icon">
-                <div class="emotion-label"><?= $label ?></div>
-                <div class="emotion-count"><?= $emotion_counts[$icon] ?>개</div>
-              </div>
+              <?php foreach ($icon_tables as $icon => $info): ?>
+                <div class="emotion-item">
+                  <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
+                  <div class="emotion-label"><?= $info['label'] ?></div>
+                  <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
+                </div> 
               <?php endforeach; ?>
               <!-- 재판 회부 버튼 -->
               <div class="trial-btn-wrapper">

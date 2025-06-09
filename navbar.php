@@ -47,7 +47,7 @@ require_once __DIR__ . '/db-config.php';
     color: #fff;
     text-decoration: none;
     margin-right: 15px;
-    padding-left: 10px;
+    padding-left: 100px;
     padding-right: 10px;
   }
   nav a:last-child {
