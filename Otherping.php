@@ -29,7 +29,13 @@ switch ($order) {
         ) DESC";
         break;
     
-  // case;
+  case "judgement":
+    $order_sql = "ORDER BY (
+      SELECT SUM(ji.count)
+      FROM judgement_icon ji
+      WHERE ji.excuse_pkey = ep.pkey
+      ) DESC";
+      break;
   case 'useful':
     $order_sql = "ORDER BY (
         SELECT COUNT(*)
@@ -277,7 +283,7 @@ $result = $stmt->get_result();
     <div class="dropdown-content">
       <a href="?order=latest">최신순</a>
       <a href="?order=review">리뷰순</a>
-      <a href="?order=reuse">재판 회부 순</a>
+      <a href="?order=judgement">재판 회부 순</a>
       <a href="?order=useful">유용해요 순</a>
       <a href="?order=funny">웃겨요 순</a>
       <a href="?order=bad">별로예요 순</a>
