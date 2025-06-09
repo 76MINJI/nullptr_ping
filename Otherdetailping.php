@@ -73,9 +73,12 @@ if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
         case 4: $icon_table = 'agree_icon'; break;
         case 5: $icon_table = 'angry_icon'; break;
         default:
-            header("Location: Otherdetailping.php?id={$post_pkey}");
+            header("Location: Otherdetailping.php?id={$pkey}");
             exit;
     }
+
+    // excuse_pkey 할당
+    $excuse_pkey = $pkey;
 
     // 중복 클릭 방지 (옵션)
     $checkSql  = "SELECT pkey FROM {$icon_table} WHERE base_pkey = ? AND user_pkey = ? LIMIT 1";
@@ -86,15 +89,16 @@ if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
     $checkStmt->close();
 
     if (!$exists) {
-      $ins = $conn->prepare("INSERT INTO {$icon_table} (base_pkey, excuse_pkey, user_pkey) VALUES (?, ?, ?)");
-      $ins->bind_param("iii", $base_pkey, $base_pkey, $user_pkey);      
+        $ins = $conn->prepare("INSERT INTO {$icon_table} (excuse_pkey, user_pkey, base_pkey, value) VALUES (?, ?, ?, 1)");
+        $ins->bind_param("iii", $excuse_pkey, $user_pkey, $base_pkey);
         $ins->execute();
-        $ins->close();        
+        $ins->close();
     }
 
-    header("Location: Otherdetailping.php?id={$post_pkey}");
+    header("Location: Otherdetailping.php?id={$pkey}");
     exit;
 }
+
 
 
 // ── 이모션 개수 불러오기 ──
@@ -186,47 +190,38 @@ if (count($reviews)===0) {
       'insert_date'=>date('Y-m-d H:i:s'),
     ];
   }
-  
-  if ($clicked_judgement && !$is_owner) {
-    // 이미 클릭했는지 확인
-    $stmt = $conn->prepare("SELECT pkey, count FROM judgement_icon WHERE base_pkey = ? AND user_pkey = ?");
-    $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
-    $stmt->execute();
-    $stmt->store_result();
+  // ── 재판회부 아이콘 ──
+  $excuse_pkey = $_GET['id'] ?? null;
+$clicked_judgement = isset($_GET['judgement']) ? true : false;
 
-    if ($stmt->num_rows > 0) {
-        // 이미 클릭했으면 count 증가
-        $stmt->bind_result($judgement_pkey, $current_count);
-        $stmt->fetch();
-        $stmt->close();
+if ($clicked_judgement && !$is_owner) {
+  $stmt = $conn->prepare("SELECT pkey, count FROM judgement_icon WHERE base_pkey = ? AND user_pkey = ?");
+  $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
+  $stmt->execute();
+  $stmt->store_result();
 
-        $new_count = $current_count + 1;
-        $upd = $conn->prepare("UPDATE judgement_icon SET count = ? WHERE pkey = ?");
-        $upd->bind_param("ii", $new_count, $judgement_pkey);
-        $upd->execute();
-        $upd->close();
-    } else {
-        $stmt->close();
-        // 없으면 새로 추가
-        $ins = $conn->prepare("INSERT INTO judgement_icon (base_pkey, excuse_pkey, user_pkey, count) VALUES (?, ?, ?, 1)");
-        $ins->bind_param("iii", $base_pkey, $base_pkey, $current_user_pkey);
-        $ins->execute();
-        $ins->close();
-    }
+  if ($stmt->num_rows > 0) {
+      $stmt->bind_result($judgement_pkey, $current_count);
+      $stmt->fetch();
+      $stmt->close();
 
+      $new_count = $current_count + 1;
+      $upd = $conn->prepare("UPDATE judgement_icon SET count = ? WHERE pkey = ?");
+      $upd->bind_param("ii", $new_count, $judgement_pkey);
+      $upd->execute();
+      $upd->close();
+  } else {
+      $stmt->close();
+      $ins = $conn->prepare("INSERT INTO judgement_icon (base_pkey, excuse_pkey, user_pkey, count) VALUES (?, ?, ?, 1)");
+      $ins->bind_param("iii", $base_pkey, $excuse_pkey, $current_user_pkey);
+      $ins->execute();
+      $ins->close();
+  }
 
-  // $already_judged = $stmt->num_rows > 0;
-  // $stmt->close();
-  // if (!$already_judged) {
-  //     // 회부 INSERT
-  //     $stmt = $conn->prepare("INSERT INTO judgements (base_pkey, user_pkey, vote_count, judgement_type) VALUES (?, ?, 1, 1)");
-  //     $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
-  //     $stmt->execute();
-  //     $stmt->close();
-  // }
-  header("Location: Otherdetailping.php?id={$pkey}");
+  header("Location: Otherdetailping.php?id={$excuse_pkey}");
   exit;
 }
+
 
 // ── 회부 수 조회 ──
 $stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
