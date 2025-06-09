@@ -2,6 +2,17 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'db-config.php';
 
+$user_pkey = $_SESSION['user_pkey'] ?? null;
+
+if ($user_pkey === null) {
+    echo "<script>
+        alert('로그인이 필요합니다.');
+        location.href='Login.php';
+    </script>";
+    exit;
+}
+
+
 // ① URL 파라미터에서 pkey 가져오기
 $pkey = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($pkey <= 0) {
@@ -50,40 +61,59 @@ $is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
 // $post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
 //$post_pkey = (int)($_GET['id'] ?? 0);
 
-
 // ── 클릭 처리 ──
 $clicked_icon = isset($_GET['icon']) ? (int)$_GET['icon'] : 0;
+
 if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
-    $checkSql  = "SELECT pkey, icon_count FROM emotions WHERE base_pkey = ? AND icon = ? LIMIT 1";
+    // 테이블 매핑
+    switch ($clicked_icon) {
+        case 1: $icon_table = 'useful_icon'; break;
+        case 2: $icon_table = 'funny_icon'; break;
+        case 3: $icon_table = 'bad_icon'; break;
+        case 4: $icon_table = 'agree_icon'; break;
+        case 5: $icon_table = 'angry_icon'; break;
+        default:
+            header("Location: Otherdetailping.php?id={$post_pkey}");
+            exit;
+    }
+
+    // 중복 클릭 방지 (옵션)
+    $checkSql  = "SELECT pkey FROM {$icon_table} WHERE base_pkey = ? AND user_pkey = ? LIMIT 1";
     $checkStmt = $conn->prepare($checkSql);
-    $checkStmt->bind_param("ii", $base_pkey, $clicked_icon);
+    $checkStmt->bind_param("ii", $base_pkey, $user_pkey);
     $checkStmt->execute();
-    $checkStmt->bind_result($emotion_pkey, $current_count);
     $exists = $checkStmt->fetch();
     $checkStmt->close();
 
-    if ($exists) {
-        $new_count = $current_count + 1;
-        $upd = $conn->prepare("UPDATE emotions SET icon_count = ? WHERE pkey = ?");
-        $upd->bind_param("ii", $new_count, $emotion_pkey);
-        $upd->execute();
-        $upd->close();
-    } else {
-        $ins = $conn->prepare("INSERT INTO emotions (base_pkey, icon, icon_count) VALUES (?, ?, 1)");
-        $ins->bind_param("ii", $base_pkey, $clicked_icon);
+    if (!$exists) {
+      $ins = $conn->prepare("INSERT INTO {$icon_table} (base_pkey, excuse_pkey, user_pkey) VALUES (?, ?, ?)");
+      $ins->bind_param("iii", $base_pkey, $base_pkey, $user_pkey);      
         $ins->execute();
-        $ins->close();
+        $ins->close();        
     }
+
     header("Location: Otherdetailping.php?id={$post_pkey}");
     exit;
 }
 
+
 // ── 이모션 개수 불러오기 ──
 $emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
 $placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
-$sql2 = "SELECT icon, icon_count FROM emotions WHERE base_pkey = ? AND icon IN ($placeholders)";
-$params = array_merge([$base_pkey], array_keys($emotion_counts));
+$sql2 = "
+    SELECT 1 AS icon, COUNT(*) AS icon_count FROM useful_icon WHERE base_pkey = ?
+    UNION ALL
+    SELECT 2 AS icon, COUNT(*) AS icon_count FROM funny_icon WHERE base_pkey = ?
+    UNION ALL
+    SELECT 3 AS icon, COUNT(*) AS icon_count FROM bad_icon WHERE base_pkey = ?
+    UNION ALL
+    SELECT 4 AS icon, COUNT(*) AS icon_count FROM agree_icon WHERE base_pkey = ?
+    UNION ALL
+    SELECT 5 AS icon, COUNT(*) AS icon_count FROM angry_icon WHERE base_pkey = ?
+";
+$params = [$base_pkey, $base_pkey, $base_pkey, $base_pkey, $base_pkey];
 $types = str_repeat('i', count($params));
+
 
 $stmt2 = $conn->prepare($sql2);
 $stmt2->bind_param($types, ...$params);
@@ -157,33 +187,34 @@ if (count($reviews)===0) {
     ];
   }
   
-  // ── 회부 클릭 처리 (본인 글이 아닐 때만 허용) ──
-$clicked_judgement = isset($_GET['judgement']) ? true : false;
-if ($clicked_judgement && !$is_owner) {
-  // 이미 회부한 적 있는지 확인
-  $stmt = $conn->prepare("SELECT pkey FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
-  $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
-  $stmt->execute();
-  $stmt->store_result();
+  if ($clicked_judgement && !$is_owner) {
+    // 이미 클릭했는지 확인
+    $stmt = $conn->prepare("SELECT pkey, count FROM judgement_icon WHERE base_pkey = ? AND user_pkey = ?");
+    $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
+    $stmt->execute();
+    $stmt->store_result();
 
-  if ($stmt->num_rows > 0) {
-        // 이미 눌렀다면 취소 (DELETE)
-        $stmt->bind_result($judgement_pkey);
+    if ($stmt->num_rows > 0) {
+        // 이미 클릭했으면 count 증가
+        $stmt->bind_result($judgement_pkey, $current_count);
         $stmt->fetch();
         $stmt->close();
 
-        $del = $conn->prepare("DELETE FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
-        $del->bind_param("ii", $base_pkey, $current_user_pkey);
-        $del->execute();
-        $del->close();
+        $new_count = $current_count + 1;
+        $upd = $conn->prepare("UPDATE judgement_icon SET count = ? WHERE pkey = ?");
+        $upd->bind_param("ii", $new_count, $judgement_pkey);
+        $upd->execute();
+        $upd->close();
     } else {
         $stmt->close();
-        // 없으면 회부 (INSERT)
-        $ins = $conn->prepare("INSERT INTO judgements (base_pkey, user_pkey, vote_count, judgement_type) VALUES (?, ?, 1, 1)");
-        $ins->bind_param("ii", $base_pkey, $current_user_pkey);
+        // 없으면 새로 추가
+        $ins = $conn->prepare("INSERT INTO judgement_icon (base_pkey, excuse_pkey, user_pkey, count) VALUES (?, ?, ?, 1)");
+        $ins->bind_param("iii", $base_pkey, $base_pkey, $current_user_pkey);
         $ins->execute();
         $ins->close();
     }
+
+
   // $already_judged = $stmt->num_rows > 0;
   // $stmt->close();
   // if (!$already_judged) {
