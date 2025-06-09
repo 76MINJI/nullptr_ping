@@ -192,44 +192,41 @@ if (count($reviews)===0) {
   }
   // ── 재판회부 아이콘 ──
   $excuse_pkey = $_GET['id'] ?? null;
-$clicked_judgement = isset($_GET['judgement']) ? true : false;
-
-if ($clicked_judgement && !$is_owner) {
-  $stmt = $conn->prepare("SELECT pkey, count FROM judgement_icon WHERE base_pkey = ? AND user_pkey = ?");
-  $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
-  $stmt->execute();
-  $stmt->store_result();
-
-  if ($stmt->num_rows > 0) {
-      $stmt->bind_result($judgement_pkey, $current_count);
-      $stmt->fetch();
-      $stmt->close();
-
-      $new_count = $current_count + 1;
-      $upd = $conn->prepare("UPDATE judgement_icon SET count = ? WHERE pkey = ?");
-      $upd->bind_param("ii", $new_count, $judgement_pkey);
-      $upd->execute();
-      $upd->close();
-  } else {
-      $stmt->close();
-      $ins = $conn->prepare("INSERT INTO judgement_icon (base_pkey, excuse_pkey, user_pkey, count) VALUES (?, ?, ?, 1)");
-      $ins->bind_param("iii", $base_pkey, $excuse_pkey, $current_user_pkey);
-      $ins->execute();
-      $ins->close();
+  $clicked_judgement = isset($_GET['judgement']) ? true : false;
+  
+  if ($clicked_judgement && !$is_owner) {
+      $checkSql = "SELECT pkey FROM judgement_icon WHERE base_pkey = ? AND excuse_pkey = ? AND user_pkey = ? LIMIT 1";
+      $checkStmt = $conn->prepare($checkSql);
+      $checkStmt->bind_param("iii", $base_pkey, $excuse_pkey, $current_user_pkey);
+      $checkStmt->execute();
+      $exists = $checkStmt->fetch();
+      $checkStmt->close();
+  
+      if (!$exists) {
+          $ins = $conn->prepare("INSERT INTO judgement_icon (base_pkey, excuse_pkey, user_pkey, count) VALUES (?, ?, ?, 1)");
+          $ins->bind_param("iii", $base_pkey, $excuse_pkey, $current_user_pkey);
+          $ins->execute();
+          $ins->close();
+      }
+      echo "<script>
+      alert('재판 회부는 1회만 가능합니다.');
+      location.href='Otherdetailping.php?id={$excuse_pkey}';a
+    </script>";
+      exit;
   }
-
-  header("Location: Otherdetailping.php?id={$excuse_pkey}");
-  exit;
-}
+  
+  
 
 
 // ── 회부 수 조회 ──
-$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
-$stmt->bind_param("i", $base_pkey);
+$stmt = $conn->prepare("SELECT SUM(count) FROM judgement_icon WHERE base_pkey = ? AND excuse_pkey = ?");
+$stmt->bind_param("ii", $base_pkey, $excuse_pkey);
 $stmt->execute();
 $stmt->bind_result($trial_count);
 $stmt->fetch();
 $stmt->close();
+
+
 
 // ── 내가 이미 회부했는지 여부 확인 (버튼 비활성화용) ──
 $stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
