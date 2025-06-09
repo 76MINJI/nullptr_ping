@@ -207,14 +207,18 @@ if (count($reviews)===0) {
           $ins->bind_param("iii", $base_pkey, $excuse_pkey, $current_user_pkey);
           $ins->execute();
           $ins->close();
+
+          header("Location: Otherdetailping.php?id={$excuse_pkey}");
+          exit;
+      } else {
+          echo "<script>
+                  alert('재판 회부는 1회만 가능합니다.');
+                  location.href='Otherdetailping.php?id={$excuse_pkey}';
+                </script>";
+          exit;
       }
-      //TODO 이미 내가 재판회부 했을때만 뜨기 .. 수정
-      echo "<script>
-      alert('재판 회부는 1회만 가능합니다.');
-      location.href='Otherdetailping.php?id={$excuse_pkey}';a
-    </script>";
-      exit;
   }
+  
   
   
 
