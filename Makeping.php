@@ -1,11 +1,4 @@
 <?php
-//session_start();
-//
-//// 로그인 안 했을 경우 로그인 페이지로 이동
-//if (!isset($_SESSION['id'])) {
-//    header("Location: Login.php");
-//    exit();
-//}
 
 session_start();
 if (!isset($_SESSION['id'])) {
