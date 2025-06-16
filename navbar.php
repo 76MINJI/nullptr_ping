@@ -11,10 +11,19 @@ require_once __DIR__ . '/db-config.php';
     </a>
   </div>
   <a href="Makeping.php">MAKE PING</a>
-  <a href="Viewmyping.php">MY PING</a>
-  <a href="Otherping.php">OTHER PING</a>
-  <a href="Pvp.php">PING vs PING</a>
+<a href="Viewmyping.php">MY PING</a>
+<a href="Otherping.php">OTHER PING</a>
+<a href="Pvp.php">PING vs PING</a>
+ <?php if (isset($_SESSION['id'])): ?>
+  <!-- <span style="color: white; margin-left: auto; margin-right: 15px; white-space: nowrap;">
+  <span style="font-size: 22px;">🙋🏼‍♀️</span> <?= htmlspecialchars($_SESSION['id']) ?> 님
+</span> -->
   <a href="Mypage.php">MYPAGE</a>
+  <a href="Logout.php" style="color: white;">LOGOUT</a>
+<?php else: ?>
+  <a href="Login.php" style="margin-left: auto; color: white;">LOGIN</a>
+<?php endif; ?>
+
 </nav>
 
 <!-- 공통 스타일 -->
@@ -37,7 +46,10 @@ require_once __DIR__ . '/db-config.php';
     align-items: center;
     background: #00C3FF;
     padding: 10px;
+    margin-left: -100px; 
     font-family: 'MainFont-Bold', sans-serif;
+    flex-wrap: nowrap;         
+    white-space: nowrap; 
   }
   .nav-logo img {
     height: 32px;
