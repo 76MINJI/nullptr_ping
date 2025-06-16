@@ -181,15 +181,15 @@ while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
 
 // 더미 리뷰
-if (count($reviews)===0) {
-  $reviews[] = [
-    'user_pkey'=>0,
-    'username'=>'테스트유저',
-    'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-    'rating'=>4,
-      'insert_date'=>date('Y-m-d H:i:s'),
-    ];
-  }
+// if (count($reviews)===0) {
+//   $reviews[] = [
+//     'user_pkey'=>0,
+//     'username'=>'테스트유저',
+//     'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
+//     'rating'=>4,
+//       'insert_date'=>date('Y-m-d H:i:s'),
+//     ];
+//   }
   // ── 재판회부 아이콘 ──
   $excuse_pkey = $_GET['id'] ?? null;
   $clicked_judgement = isset($_GET['judgement']) ? true : false;
