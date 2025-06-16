@@ -1,3 +1,19 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) session_start();
+include 'db-config.php';
+
+$sql = "
+SELECT ep.content, IFNULL(SUM(ji.count), 0) AS total_judgement
+FROM excuse_posts ep
+LEFT JOIN judgement_icon ji ON ep.pkey = ji.excuse_pkey
+WHERE ep.status = 1
+GROUP BY ep.pkey
+ORDER BY total_judgement DESC
+LIMIT 10
+";
+$result = $conn->query($sql);
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -91,9 +107,9 @@
     <div class="top10-box">
         <h3>오늘의 핑계 TOP 10</h3>
         <ol>
-            <?php for ($i = 1; $i <= 10; $i++): ?>
-                <li>핑계 리스트</li>
-            <?php endfor; ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <li><?= htmlspecialchars(substr($row['content'], 0, 30)) ?></li>
+            <?php endwhile; ?>
         </ol>
     </div>
 
