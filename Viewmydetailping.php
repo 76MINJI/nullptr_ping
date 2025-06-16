@@ -171,12 +171,16 @@ $stmt->close();
 $show_form = ($action==='add_review');
 
 // ── 회부 수 조회 ──
-$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
-$stmt->bind_param("i", $base_pkey);
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgement_icon
+    WHERE base_pkey = ? AND excuse_pkey = ? AND user_pkey != ?
+");
+$stmt->bind_param("iii", $base_pkey, $post_pkey, $user_pkey);
 $stmt->execute();
 $stmt->bind_result($trial_count);
 $stmt->fetch();
 $stmt->close();
+
+if (!$trial_count) $trial_count = 0;
 ?>
 
 <!DOCTYPE html>
@@ -207,11 +211,9 @@ $stmt->close();
         font-style: normal;
     }
 
-    /* 2) 사용 */
-    body {
+    /* body {
         margin: 0;
         background: #f5f5f5;
-        /* 기본 텍스트는 Medium */
         font-family: 'MainFont-Medium', sans-serif;
     }
 
@@ -242,11 +244,10 @@ $stmt->close();
         margin-right: 15px;
     }
 
-    /* 마지막 링크에만 자동 마진 */
     nav a:last-child {
         margin-left: auto;
         margin-right: 12px;
-    }
+    } */
 
     #container {
         display: flex;
@@ -523,17 +524,7 @@ $stmt->close();
 </head>
 
 <body>
-    <nav>
-        <div class="nav-logo">
-            <img src="img\LOGO_nullptr.png" alt="Logo" />
-        </div>
-        <a href="Makeping.php">MAKE PING</a>
-        <a href="Viewmyping.php">MY PING</a>
-        <a href="Otherping.php">OTHER PING</a>
-        <a href="Pvp.php">PING vs PING</a>
-        <a href="Mypage.php">MYPAGE</a>
-    </nav>
-
+<?php include 'navbar.php'; ?>
     <div id="container">
         <section id="detail">
             <!-- 상세 -->
@@ -560,6 +551,12 @@ $stmt->close();
                     <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
                   </div> 
                 <?php endforeach; ?>
+                <!-- 재판 회부 버튼 -->
+              <div class="trial-btn-wrapper">
+                <button class="trial-btn">
+                  <span class="label">재판 회부 </span>
+                  <span class="count"><?= $trial_count ?></button></span>
+              </div>
             </div>
         </section>
 
