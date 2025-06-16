@@ -166,6 +166,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
   
   // ── 리뷰 목록 로드 ──
   $reviews = [];
+  $has_reviews = count($reviews) > 0;
   $stmt = $conn->prepare("
   SELECT r.user_pkey, u.name AS username, r.content, r.rating, be.insert_date
     FROM reviews AS r
@@ -329,11 +330,18 @@ $stmt->close();
 
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
-        margin:0 20px 20px;
-        border:2px solid #4cbfee;
-        border-radius:6px;
-        background:#fff;
-        overflow:hidden;
+      margin: 0 20px 20px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #reviews-wrapper.has-reviews {
+      border: 2px solid #4cbfee;
+      background: #fff;
+    }
+
+    #reviews-wrapper.no-reviews {
+      border: none;
+      background: transparent;
     }
     #review-bar {
         display:flex; align-items:center;
@@ -545,7 +553,7 @@ $stmt->close();
       </aside>
 </div>
     <!-- 리뷰 작성 폼 & 리스트 전체 밑에 배치 -->
-    <section id="reviews-wrapper">
+    <section id="reviews-wrapper" class="<?= $has_reviews ? 'has-reviews' : 'no-reviews'?>">
       <div id="review-bar" style="display:none;">
         <form method="post" action="?id=<?= $post_pkey ?>&action=add_review" style="display:flex;flex:1;">
           <div class="star-rating">
