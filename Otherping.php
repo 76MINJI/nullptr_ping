@@ -107,7 +107,6 @@ $stmt->bind_param("i", $user_pkey);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// $result = mysqli_query($conn, $sql);
 ?>
 
 <!DOCTYPE html>
@@ -232,16 +231,10 @@ $result = $stmt->get_result();
       border-radius: 6px;
     }
 
-    .meta-emoji-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      width: 100%;
-      margin-top: 10px;
-    }
 
     .meta-left {
       display: flex;
+      margin-top: 10px;
       flex-direction: column;
       gap: 6px;
     }
@@ -250,7 +243,7 @@ $result = $stmt->get_result();
   display: grid;
   color: #FEFEFE !important;     
   grid-template-columns: repeat(2, auto); 
-  gap: 6px;
+  gap: 5px;
 }
 
 .meta-tags div {
@@ -266,8 +259,9 @@ $result = $stmt->get_result();
 
 
     .date {
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 17px;
+      margin-left: 10px;
+      font-family:'MainFont-Medium' ;
     }
 
 
@@ -313,15 +307,15 @@ while ($row = mysqli_fetch_assoc($result)) {
     echo "<div class='meta-emoji-row'>";
 
       echo "<div class='meta-left'>";
+      echo "  <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>";
       echo "  <div class='meta-tags'>";
       echo "    <div>" . htmlspecialchars($row['tag_place'] ?? '') . "</div>";
-      echo "    <div>" . htmlspecialchars($row['tag_time'] ?? '') . "</div>";
+      echo "    <div>" . htmlspecialchars($row['tag_person'] ?? '') . "</div>";
       echo "  </div>";
       echo "  <div class='meta-tags'>";
-      echo "    <div>" . htmlspecialchars($row['tag_person'] ?? '') . "</div>";
+      echo "    <div>" . htmlspecialchars($row['tag_time'] ?? '') . "</div>";
       echo "    <div>" . htmlspecialchars($row['tag_mood'] ?? '') . "</div>";
       echo "  </div>";
-      echo "  <div class='date'>" . date('Y.m.d', strtotime($row['insert_date'])) . "</div>";
       echo "</div>";
     echo "</div>"; // ping-card row 
     echo "</div>"; // ping-card
