@@ -81,7 +81,7 @@ if (!isset($_SESSION['id'])) {
         background-color: #FEFEFE;
         color: #00C3FF;
         border: 2px solid #00C3FF;
-        font-family: 'GmarketSansBold';
+        font-family: 'Mainfont-Medium';
         font-size: 18px;
         padding: 10px 25px;
         cursor: pointer;
@@ -103,7 +103,7 @@ if (!isset($_SESSION['id'])) {
         background-color: #00C3FF;
         color: white;
         border: none;
-        font-family: 'GmarketSansBold';
+        font-family: 'Mainfont-Medium';
         padding: 10px 25px;
         font-size: 18px;
         cursor: pointer;
