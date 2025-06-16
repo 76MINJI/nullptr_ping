@@ -201,6 +201,67 @@ if ($totalVotes > 0) {
     $pctNot = $pctGuilty = 50;
 }
 
+
+// ─── 댓글 테이블 존재 여부 확인 ───────────────────────
+$tableExists = false;
+$res = $conn->query("SHOW TABLES LIKE 'judgements_replies'");
+if ($res && $res->num_rows > 0) {
+    $tableExists = true;
+}
+
+// ─── 댓글 로드 ───
+$comments = [];
+if ($tableExists) {
+    $stmtC = $conn->prepare("
+        SELECT jr.pkey, jr.user_pkey, u.name AS username, jr.content, jr.vote, be.insert_date
+        FROM judgements_replies jr
+        JOIN users u         ON jr.user_pkey = u.pkey
+        JOIN base_entity be  ON jr.base_pkey  = be.pkey
+        WHERE jr.judgement_pkey = ?
+        ORDER BY be.insert_date DESC
+    ");
+    $stmtC->bind_param("i", $pkey);
+    $stmtC->execute();
+    $resC = $stmtC->get_result();
+    while ($r = $resC->fetch_assoc()) {
+        $comments[] = $r;
+    }
+    $stmtC->close();
+}
+
+
+// ─── 댓글 등록 처리 ───
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
+    $ctype = (int)($_POST['jtype'] ?? 0); // vote (bit형)
+    $ctext = trim($_POST['content'] ?? '');
+    if ($ctext !== '') {
+        $ins = $conn->prepare("
+            INSERT INTO judgements_replies
+            (base_pkey, judgement_pkey, user_pkey, content, vote)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $jid = 0;
+        $stmtJ = $conn->prepare("SELECT pkey FROM judgements WHERE excuse_pkey = ? ORDER BY pkey DESC LIMIT 1");
+        $stmtJ->bind_param("i", $pkey);
+        $stmtJ->execute();
+        $stmtJ->bind_result($jid);
+        $stmtJ->fetch();
+        $stmtJ->close();
+        $ins->bind_param("iiisi",
+            $post['base_pkey'], // 게시글의 base_pkey
+            $jid,              // judgement_pkey
+            $_SESSION['id'],    // 로그인한 사용자 id
+            $ctext,
+            $ctype
+        );
+        $ins->execute();
+        $ins->close();
+        header("Location: Pvp.php?id={$pkey}");
+        exit;
+    }
+}
+
+
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -251,7 +312,7 @@ if ($totalVotes > 0) {
 
         .vote-container {
             position: relative;
-            width: 97%;     /* 전체 고정폭 */
+            width: 90%;     /* 전체 고정폭 */
             height: 50px;
             margin: 20px auto 8px;
             border-radius: 6px;
@@ -290,6 +351,66 @@ if ($totalVotes > 0) {
 
         .inner {
             text-align: center;
+        }
+
+        /* === 댓글 기능 스타일 추가 === */
+        .comment-section {
+            max-width: 90%;
+            margin: 20px auto 40px;
+            border: 2px solid #5ab9ea;
+            border-radius: 6px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .comment-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .comment-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .avatar {
+            width: 40px; height: 40px;
+            background: #ccc; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: #fff; margin-right: 12px;
+        }
+        .comment-text {
+            flex: 1; margin-right: 12px;
+        }
+        .comment-tag {
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 0.8rem; margin-right: 12px;
+            color: #fff;
+        }
+        .comment-tag.innocent { background: #5ab9ea; }
+        .comment-tag.guilty   { background: #ec6b6b; }
+        .comment-date {
+            font-size: 0.75rem; color: #666;
+        }
+        .comment-form {
+            display: flex;
+            border-top: 2px solid #5ab9ea;
+        }
+        .comment-input {
+            flex: 1; display: flex; align-items: center; padding: 10px;
+        }
+        .comment-input label {
+            margin-right: 12px;
+            font-size: 0.9rem;
+        }
+        .comment-input textarea {
+            flex: 1; resize: none; height: 40px;
+            padding: 6px; margin-left: 12px;
+            font-size: 0.9rem;
+        }
+        .comment-form button {
+            background: #5ab9ea; color: #fff;
+            border: none; padding: 0 20px;
+            font-size: 0.9rem; cursor: pointer;
         }
     </style>
 </head>
@@ -336,5 +457,29 @@ if ($totalVotes > 0) {
             유죄다 (억지다) &nbsp; <?= $pctGuilty ?>% &nbsp; (<?= $guilty ?>표)
         </div>
     </div>
+
+<div class="comment-section">
+    <div class="comment-list">
+        <?php foreach($comments as $c): ?>
+            <div class="comment-item">
+                <div class="avatar"><?= htmlspecialchars(substr($c['username'],0,1)) ?></div>
+                <div class="comment-text"><?= htmlspecialchars($c['content']) ?></div>
+                <div class="comment-tag <?= $c['judgement_type']==0 ? 'innocent' : 'guilty' ?>">
+                    <?= $c['judgement_vote']==0 ? '무죄' : '유죄' ?>
+                </div>
+                <div class="comment-date"><?= date('y/m/d H:i', strtotime($c['insert_date'])) ?></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <form method="post" class="comment-form">
+        <div class="comment-input">
+            <label><input type="radio" name="jtype" value="0" checked> 무죄</label>
+            <label><input type="radio" name="jtype" value="1"> 유죄</label>
+            <textarea name="content" placeholder="나의 판단 남기기"></textarea>
+        </div>
+        <button type="submit" name="submit_comment">등록</button>
+    </form>
+</div>
 </body>
 </html>
