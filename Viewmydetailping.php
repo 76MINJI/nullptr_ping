@@ -158,15 +158,15 @@ while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
 
 // 더미 리뷰
-if (count($reviews)===0) {
-    $reviews[] = [
-      'user_pkey'=>0,
-      'username'=>'테스트유저',
-      'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-      'rating'=>4,
-      'insert_date'=>date('Y-m-d H:i:s'),
-    ];
-}
+// if (count($reviews)===0) {
+//     $reviews[] = [
+//       'user_pkey'=>0,
+//       'username'=>'테스트유저',
+//       'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
+//       'rating'=>4,
+//       'insert_date'=>date('Y-m-d H:i:s'),
+//     ];
+// }
 
 $show_form = ($action==='add_review');
 
@@ -540,32 +540,26 @@ $stmt->close();
             <div class="status">
               <p><strong>상황:</strong>
                   <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
             <div class="top-action-bar">
-              <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
-              <div class="right-buttons">
-                <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
-                <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
-              </div>
+                <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
+                <div class="right-buttons">
+                    <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
+                    <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
+                </div>
             </div>
             <div class="emotions-container">
-              <?php foreach ($icon_tables as $icon => $info): ?>
-                <div class="emotion-item">
-                  <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
-                  <div class="emotion-label"><?= $info['label'] ?></div>
-                  <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
-                </div> 
-              <?php endforeach; ?>
-              <!-- 재판 회부 버튼 -->
-              <div class="trial-btn-wrapper">
-                <button class="trial-btn">
-                  <span class="label">재판 회부 </span>
-                  <span class="count"><?= $trial_count ?></button></span>
-              </div>
+                <?php foreach ($icon_tables as $icon => $info): ?>
+                  <div class="emotion-item">
+                    <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
+                    <div class="emotion-label"><?= $info['label'] ?></div>
+                    <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
+                  </div> 
+                <?php endforeach; ?>
             </div>
         </section>
 
