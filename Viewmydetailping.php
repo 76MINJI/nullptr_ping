@@ -158,25 +158,29 @@ while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
 
 // 더미 리뷰
-if (count($reviews)===0) {
-    $reviews[] = [
-      'user_pkey'=>0,
-      'username'=>'테스트유저',
-      'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-      'rating'=>4,
-      'insert_date'=>date('Y-m-d H:i:s'),
-    ];
-}
+// if (count($reviews)===0) {
+//     $reviews[] = [
+//       'user_pkey'=>0,
+//       'username'=>'테스트유저',
+//       'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
+//       'rating'=>4,
+//       'insert_date'=>date('Y-m-d H:i:s'),
+//     ];
+// }
 
 $show_form = ($action==='add_review');
 
 // ── 회부 수 조회 ──
-$stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND judgement_type = 1");
-$stmt->bind_param("i", $base_pkey);
+$stmt = $conn->prepare("SELECT COUNT(*) FROM judgement_icon
+    WHERE base_pkey = ? AND excuse_pkey = ? AND user_pkey != ?
+");
+$stmt->bind_param("iii", $base_pkey, $post_pkey, $user_pkey);
 $stmt->execute();
 $stmt->bind_result($trial_count);
 $stmt->fetch();
 $stmt->close();
+
+if (!$trial_count) $trial_count = 0;
 ?>
 
 <!DOCTYPE html>
@@ -207,11 +211,9 @@ $stmt->close();
         font-style: normal;
     }
 
-    /* 2) 사용 */
-    body {
+    /* body {
         margin: 0;
         background: #f5f5f5;
-        /* 기본 텍스트는 Medium */
         font-family: 'MainFont-Medium', sans-serif;
     }
 
@@ -242,11 +244,10 @@ $stmt->close();
         margin-right: 15px;
     }
 
-    /* 마지막 링크에만 자동 마진 */
     nav a:last-child {
         margin-left: auto;
         margin-right: 12px;
-    }
+    } */
 
     #container {
         display: flex;
@@ -523,44 +524,34 @@ $stmt->close();
 </head>
 
 <body>
-    <nav>
-        <div class="nav-logo">
-            <img src="img\LOGO_nullptr.png" alt="Logo" />
-        </div>
-        <a href="Makeping.php">MAKE PING</a>
-        <a href="Viewmyping.php">MY PING</a>
-        <a href="Otherping.php">OTHER PING</a>
-        <a href="Pvp.php">PING vs PING</a>
-        <a href="Mypage.php">MYPAGE</a>
-    </nav>
-
+<?php include 'navbar.php'; ?>
     <div id="container">
         <section id="detail">
             <!-- 상세 -->
             <div class="status">
               <p><strong>상황:</strong>
                   <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
-                  <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
+                    <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
             <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
             <div class="top-action-bar">
-              <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
-              <div class="right-buttons">
-                <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
-                <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
-              </div>
+                <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
+                <div class="right-buttons">
+                    <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
+                    <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
+                </div>
             </div>
             <div class="emotions-container">
-              <?php foreach ($icon_tables as $icon => $info): ?>
-                <div class="emotion-item">
-                  <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
-                  <div class="emotion-label"><?= $info['label'] ?></div>
-                  <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
-                </div> 
-              <?php endforeach; ?>
-              <!-- 재판 회부 버튼 -->
+                <?php foreach ($icon_tables as $icon => $info): ?>
+                  <div class="emotion-item">
+                    <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
+                    <div class="emotion-label"><?= $info['label'] ?></div>
+                    <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
+                  </div> 
+                <?php endforeach; ?>
+                <!-- 재판 회부 버튼 -->
               <div class="trial-btn-wrapper">
                 <button class="trial-btn">
                   <span class="label">재판 회부 </span>
