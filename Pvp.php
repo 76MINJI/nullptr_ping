@@ -15,52 +15,29 @@ if (!isset($_SESSION['id'])) {
 }
 
 // 3) 조회할 글의 pkey 결정 
-// 테스트용: URL 파라미터가 있으면 그 값을, 없으면 기본 1번 글
 $pkey = isset($_GET['id']) ? (int)$_GET['id'] : 1;
+$user_pkey = isset($_SESSION['user_pkey']) ? (int)$_SESSION['user_pkey'] : 0;
 
-/*
-// 3-1) URL 파라미터 id 가 있으면 우선 그 글을 시도
-if (isset($_GET['id'])) {
-    $pkey = (int)$_GET['id'];
-} else {
-    // 3-2) 없으면 judgement_icon에서 count >= 2인 글 중 하나를 랜덤으로
-    $iconSql = "
-        SELECT DISTINCT excuse_pkey
-        FROM judgement_icon
-        WHERE count >= 2
-        ORDER BY RAND()
-        LIMIT 1
-    ";
-    $iconRes = $conn->query($iconSql);
-    if ($iconRes && $iconRes->num_rows > 0) {
-        $row   = $iconRes->fetch_assoc();
-        $pkey  = (int)$row['excuse_pkey'];
-    } else {
-        // 해당 조건의 글이 전혀 없을 때
-        echo "<script>
-            alert('아직 회부가 2회 이상인 글이 없습니다.');
-            history.back();
-        </script>";
-        exit;
-    }
+if ($user_pkey <= 0) {
+    die("잘못된 로그인 정보입니다. 다시 로그인해주세요.");
 }
-*/
 
-// 4) 글 내용 + 태그 + 해답 조회용 SQL
+
+// 4) 글 내용 + 태그 + 해답 조회
 $sql = "
 SELECT
     ep.base_pkey,
-    ep.content              AS post_content,
+    ep.content AS post_content,
     ep.user_pkey,
     be.insert_date,
-    s.content               AS solution_content,
-    st_place.sub_classification  AS tag_place,
+    s.content AS solution_content,
+    st_place.sub_classification AS tag_place,
     st_person.sub_classification AS tag_person,
-    st_time.sub_classification   AS tag_time,
-    st_mood.sub_classification   AS tag_mood
+    st_time.sub_classification AS tag_time,
+    st_mood.sub_classification AS tag_mood
 FROM excuse_posts ep
-JOIN base_entity be    ON ep.base_pkey = be.pkey
-LEFT JOIN solutions s  ON ep.sol_pkey  = s.pkey
+JOIN base_entity be ON ep.base_pkey = be.pkey
+LEFT JOIN solutions s ON ep.sol_pkey = s.pkey
 LEFT JOIN sub_tags st_place  ON st_place.pkey  = (s.combo_key >> 18)
 LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
@@ -77,79 +54,7 @@ $stmt->execute();
 $post = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-/*
-// === 투표 처리 ===
-if (isset($_GET['vote']) && in_array($_GET['vote'], ['0','1'])) {
-    $jtype = (int)$_GET['vote'];         // 0=무죄, 1=유죄
-
-    // 1) 기존 aggregate row 조회
-    $vq = "SELECT pkey, vote_count 
-            FROM judgements 
-            WHERE excuse_pkey = ? AND judgement_type = ?";
-    $vs = $conn->prepare($vq);
-    $vs->bind_param("ii", $pkey, $jtype);
-    $vs->execute();
-    $vs->bind_result($jid, $jcnt);
-
-    if ($vs->fetch()) {
-        // 2) 있으면 카운트+1
-        $vs->close();
-        $uq = "UPDATE judgements SET vote_count = vote_count + 1 WHERE pkey = ?";
-        $us = $conn->prepare($uq);
-        $us->bind_param("i", $jid);
-        $us->execute();
-        $us->close();
-    } else {
-        // 3) 없으면 새로 INSERT
-        $vs->close();
-        $iq = "INSERT INTO judgements (base_pkey, excuse_pkey, user_pkey, vote_count, judgement_type)
-                VALUES (?, ?, ?, 1, ?)";
-        $is = $conn->prepare($iq);
-        $is->bind_param("iiii",
-            $post['base_pkey'],  // base_pkey
-            $pkey,               // excuse_pkey
-            $_SESSION['id'],     // user_pkey
-            $jtype
-        );
-        $is->execute();
-        $is->close();
-    }
-
-    // 리다이렉트 해서 ?vote 파라미터 제거
-    header("Location: Pvp.php?id={$pkey}");
-    exit;
-}
-*/
-
-$base_pkey = (int)$post['base_pkey'];
-
-// 테스트용 투표 처리 //
-if (isset($_GET['vote']) && in_array($_GET['vote'], ['0','1'])) {
-    $jtype = (int)$_GET['vote'];  // 0=무죄, 1=유죄
-
-    // 단순히 매 클릭마다 INSERT (vote_count=1)
-    $iq = "
-        INSERT INTO judgements
-            (base_pkey, excuse_pkey, user_pkey, vote_count, judgement_type)
-        VALUES
-            (?, ?, ?, 1, ?)
-        ";
-    $is = $conn->prepare($iq);
-    $is->bind_param("iiii",
-        $base_pkey,
-        $pkey,
-        $_SESSION['id'],
-        $jtype
-    );
-    $is->execute();
-    $is->close();
-
-    // 새로고침
-    header("Location: Pvp.php?id={$pkey}");
-    exit;
-}
-
-// 6) 혹시 해당 pkey 글이 없으면 안내 후 종료
+// 5) 존재하지 않는 글 처리
 if (!$post) {
     echo "<script>
         alert('존재하지 않는 글입니다.');
@@ -158,111 +63,144 @@ if (!$post) {
     exit;
 }
 
-// 7) 태그 배열 생성 (null 제거)
+$base_pkey = (int)$post['base_pkey'];
+
+// 6) 투표 처리
+if (isset($_GET['vote']) && in_array($_GET['vote'], ['0','1'])) {
+    $_SESSION['last_vote_type'] = (int)$_GET['vote'];
+    header("Location: Pvp.php?id={$pkey}");
+    exit;
+}
+
+// 7) 태그 배열 생성
 $tags = array_filter([
     $post['tag_place'],
     $post['tag_person'],
     $post['tag_time'],
     $post['tag_mood'],
 ]);
-
-// 8) 본문·해답 변수 준비
 $postContent = $post['post_content'];
-$solution    = $post['solution_content'] ?? '';
+$solution = $post['solution_content'] ?? '';
 
-// 9) 투표 결과 집계
+// 8) 투표 결과 집계
 $sqlVote = "
-  SELECT judgement_type, SUM(vote_count) AS cnt
-  FROM judgements
-  WHERE excuse_pkey = ?  
-  GROUP BY judgement_type
+    SELECT judgement_type, SUM(vote_count) AS cnt
+    FROM judgements
+    WHERE excuse_pkey = ?
+    GROUP BY judgement_type
 ";
 $stmtVote = $conn->prepare($sqlVote);
-$stmtVote->bind_param("i", $pkey);  // 실제 불러온 pkey (excuse_posts.pkey)
+$stmtVote->bind_param("i", $pkey);
 $stmtVote->execute();
 $resVote = $stmtVote->get_result();
 
-$notGuilty = 0;  // 무죄 (judgement_type = 0)
-$guilty    = 0;  // 유죄 (judgement_type = 1)
+$notGuilty = 0;
+$guilty = 0;
 while ($rv = $resVote->fetch_assoc()) {
-    if ((int)$rv['judgement_type'] === 0) {
-        $notGuilty = (int)$rv['cnt'];
-    } else {
-        $guilty = (int)$rv['cnt'];
-    }
+    if ((int)$rv['judgement_type'] === 0) $notGuilty = (int)$rv['cnt'];
+    else $guilty = (int)$rv['cnt'];
 }
 $stmtVote->close();
 
 $totalVotes = $notGuilty + $guilty;
-if ($totalVotes > 0) {
-    $pctNot    = round($notGuilty / $totalVotes * 100);
-    $pctGuilty = 100 - $pctNot;
-} else {
-    $pctNot = $pctGuilty = 50;
-}
+$pctNot = $totalVotes > 0 ? round($notGuilty / $totalVotes * 100) : 50;
+$pctGuilty = 100 - $pctNot;
 
-
-// ─── 댓글 테이블 존재 여부 확인 ───────────────────────
-$tableExists = false;
-$res = $conn->query("SHOW TABLES LIKE 'judgements_replies'");
-if ($res && $res->num_rows > 0) {
-    $tableExists = true;
-}
-
-// ─── 댓글 로드 ───
-$comments = [];
-if ($tableExists) {
-    $stmtC = $conn->prepare("
-        SELECT jr.pkey, jr.user_pkey, u.name AS username, jr.content, jr.vote, be.insert_date
-        FROM judgements_replies jr
-        JOIN users u         ON jr.user_pkey = u.pkey
-        JOIN base_entity be  ON jr.base_pkey  = be.pkey
-        WHERE jr.judgement_pkey = ?
-        ORDER BY be.insert_date DESC
-    ");
-    $stmtC->bind_param("i", $pkey);
-    $stmtC->execute();
-    $resC = $stmtC->get_result();
-    while ($r = $resC->fetch_assoc()) {
-        $comments[] = $r;
-    }
-    $stmtC->close();
-}
-
-
-// ─── 댓글 등록 처리 ───
+// 9) 댓글 등록 처리
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
-    $ctype = (int)($_POST['jtype'] ?? 0); // vote (bit형)
+    $ctype = (int)($_SESSION['last_vote_type'] ?? -1);
     $ctext = trim($_POST['content'] ?? '');
-    if ($ctext !== '') {
-        $ins = $conn->prepare("
-            INSERT INTO judgements_replies
-            (base_pkey, judgement_pkey, user_pkey, content, vote)
-            VALUES (?, ?, ?, ?, ?)
+
+    if ($ctype !== -1 && $ctext !== '') {
+        // 0. 투표 중복 여부 확인
+        $stmtDupCheck = $conn->prepare("
+            SELECT COUNT(*) FROM judgements_replies 
+            WHERE excuse_pkey = ? AND user_pkey = ?
         ");
-        $jid = 0;
-        $stmtJ = $conn->prepare("SELECT pkey FROM judgements WHERE excuse_pkey = ? ORDER BY pkey DESC LIMIT 1");
-        $stmtJ->bind_param("i", $pkey);
-        $stmtJ->execute();
-        $stmtJ->bind_result($jid);
-        $stmtJ->fetch();
-        $stmtJ->close();
-        $ins->bind_param("iiisi",
-            $post['base_pkey'], // 게시글의 base_pkey
-            $jid,              // judgement_pkey
-            $_SESSION['id'],    // 로그인한 사용자 id
-            $ctext,
-            $ctype
-        );
+        $stmtDupCheck->bind_param("ii", $pkey, $user_pkey); 
+        $stmtDupCheck->execute();
+        $stmtDupCheck->bind_result($replyCount);        
+        $stmtDupCheck->fetch();
+        $stmtDupCheck->close();
+
+        if ($replyCount > 0) {
+            echo "<script>
+                alert('이미 이 글에 댓글을 작성하셨습니다.');
+                location.href='Pvp.php?id={$pkey}';
+                </script>";
+            exit;
+        }
+
+        if ($existing_jid) {
+            // 1. 이미 투표한 경우 → 기존 투표 갱신
+            $stmtUpdate = $conn->prepare("
+                UPDATE judgements 
+                SET judgement_type = ?, vote_count = 1 
+                WHERE pkey = ?
+            ");
+            $stmtUpdate->bind_param("ii", $ctype, $existing_jid);
+            $stmtUpdate->execute();
+            $stmtUpdate->close();
+
+            $jid = $existing_jid; // 나중에 댓글에 넣기 위함
+        } else {
+            // 2. 처음 투표하는 경우 → INSERT
+            $stmtBase = $conn->prepare("INSERT INTO base_entity (insert_date) VALUES (NOW())");
+            $stmtBase->execute();
+            $new_base_pkey = $conn->insert_id;
+            $stmtBase->close();
+
+            $stmtInsert = $conn->prepare("
+                INSERT INTO judgements (base_pkey, excuse_pkey, user_pkey, vote_count, judgement_type)
+                VALUES (?, ?, ?, 1, ?)
+            ");
+            $stmtInsert->bind_param("iiii", $new_base_pkey, $pkey, $user_pkey, $ctype);
+            $stmtInsert->execute();
+            $jid = $conn->insert_id;
+            $stmtInsert->close();
+        }
+
+        // 3. base_entity 생성 (댓글용)
+        $stmtBaseReply = $conn->prepare("INSERT INTO base_entity (insert_date) VALUES (NOW())");
+        $stmtBaseReply->execute();
+        $reply_base_pkey = $conn->insert_id;
+        $stmtBaseReply->close();
+
+        // 4. judgements_replies INSERT
+        $ins = $conn->prepare("INSERT INTO judgements_replies
+            (base_pkey, excuse_pkey, judgement_pkey, user_pkey, content, vote)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $ins->bind_param("iiiisi", $reply_base_pkey, $pkey, $jid, $user_pkey, $ctext, $ctype);
         $ins->execute();
         $ins->close();
+
         header("Location: Pvp.php?id={$pkey}");
         exit;
     }
 }
 
+// 10) 댓글 불러오기
+$comments = [];
+$sql = "
+    SELECT jr.pkey, jr.user_pkey, u.name AS username, jr.content, jr.vote, be.insert_date
+    FROM judgements_replies jr
+    JOIN users u         ON jr.user_pkey = u.pkey
+    JOIN base_entity be  ON jr.base_pkey = be.pkey
+    WHERE jr.excuse_pkey = ?
+    ORDER BY be.insert_date DESC
+";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $pkey);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $comments[] = $row;
+}
+$stmt->close();
 
 ?>
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -321,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         }
 
         .vote-segment {
+            min-width: 5%;
             display: block;
             height: 100%;
             text-decoration: none;
@@ -459,27 +398,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     </div>
 
 <div class="comment-section">
-    <div class="comment-list">
-        <?php foreach($comments as $c): ?>
-            <div class="comment-item">
-                <div class="avatar"><?= htmlspecialchars(substr($c['username'],0,1)) ?></div>
-                <div class="comment-text"><?= htmlspecialchars($c['content']) ?></div>
-                <div class="comment-tag <?= $c['judgement_type']==0 ? 'innocent' : 'guilty' ?>">
-                    <?= $c['judgement_vote']==0 ? '무죄' : '유죄' ?>
-                </div>
-                <div class="comment-date"><?= date('y/m/d H:i', strtotime($c['insert_date'])) ?></div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
     <form method="post" class="comment-form">
         <div class="comment-input">
-            <label><input type="radio" name="jtype" value="0" checked> 무죄</label>
-            <label><input type="radio" name="jtype" value="1"> 유죄</label>
-            <textarea name="content" placeholder="나의 판단 남기기"></textarea>
+            <?php if (isset($_SESSION['last_vote_type'])): ?>
+                <p style="margin:0 12px; font-size:0.9rem;">
+                    선택한 판단: <strong><?= $_SESSION['last_vote_type'] == 0 ? '무죄' : '유죄' ?></strong>
+                </p>
+            <?php else: ?>
+                <p style="margin:0 12px; font-size:0.9rem; color: red;">
+                    댓글을 남기려면 먼저 위에서 투표해 주세요.
+                </p>
+            <?php endif; ?>
+
+            <textarea name="content" placeholder="나의 판단 남기기" required></textarea>
         </div>
-        <button type="submit" name="submit_comment">등록</button>
+        <button type="submit" name="submit_comment" <?= isset($_SESSION['last_vote_type']) ? '' : 'disabled' ?>>등록</button>
     </form>
+
+    <!-- ✅ 댓글 목록 -->
+<!-- ✅ 댓글 목록 -->
+    <?php if (!empty($comments)): ?>
+        <div class="comment-list">
+            <?php foreach ($comments as $c): ?>
+                <div class="comment-item">
+                    <div class="comment-text" style="flex:1;">
+                        <?= nl2br(htmlspecialchars($c['content'], ENT_QUOTES, 'UTF-8')) ?>
+                        <div class="comment-date"><?= date('y/m/d H:i', strtotime($c['insert_date'])) ?></div>
+                    </div>
+                    <div class="comment-tag <?= $c['vote'] == 0 ? 'innocent' : 'guilty' ?>">
+                        <?= $c['vote'] == 0 ? '무죄' : '유죄' ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <p style="text-align:center; color:#888; margin: 20px 0;">아직 댓글이 없습니다.</p>
+    <?php endif; ?>
+
 </div>
+
+
 </body>
 </html>
