@@ -35,8 +35,7 @@ $result = $conn->query($sql);
 
         .top10-box {
             background: #FFF7B0;
-            padding: 40px 30px;
-            width: 250px;
+            padding: 40px 40px;
             height: 500px;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
         }
@@ -52,7 +51,7 @@ $result = $conn->query($sql);
             list-style: none;
             padding: 0;
             margin: 0;
-            line-height: 2.2;
+            line-height: 3.3 ;
             counter-reset: item;
         }
 
@@ -61,7 +60,6 @@ $result = $conn->query($sql);
             font-weight: bold;
             display: inline-block;
             /* min-width: 2em;    */
-            /* ✅ 숫자 길이 관계없이 . 정렬 */
             text-align: right;
             margin-right: 0.5em;
             font-feature-settings: "tnum"; /* tabular numbers */
@@ -108,7 +106,7 @@ $result = $conn->query($sql);
         <h3>오늘의 핑계 TOP 10</h3>
         <ol>
             <?php while ($row = $result->fetch_assoc()): ?>
-                <li><?= htmlspecialchars(substr($row['content'], 0, 30)) ?></li>
+                <li><?= htmlspecialchars(preg_replace('/^(.{10}).*$/us', '$1 ...', $row['content'])) ?></li>
             <?php endwhile; ?>
         </ol>
     </div>
