@@ -343,19 +343,24 @@ if (!$trial_count) $trial_count = 0;
 
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
-        margin: 0 20px 20px;
-        border: 2px solid #4cbfee;
-        border-radius: 6px;
-        background: #fff;
-        overflow: hidden;
+      margin: 0 20px 20px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #reviews-wrapper.has-reviews {
+      border: 2px solid #4cbfee;
+      background: #fff;
     }
 
+    #reviews-wrapper.no-reviews {
+      border: none;
+      background: transparent;
+    }
     #review-bar {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        border-bottom: 2px solid #4cbfee;
-        background: #fafafa;
+        display:flex; align-items:center;
+        padding:12px 20px;
+        border-bottom:2px solid #4cbfee;
+        background:#fafafa;
     }
 
     .star-rating input {
@@ -590,21 +595,20 @@ if (!$trial_count) $trial_count = 0;
     </div>
 
     <!-- 리뷰 작성 폼 & 리스트 전체 밑에 배치 -->
-    <section id="reviews-wrapper">
-        <div id="review-bar" style="display:none;">
-            <form method="post" action="?id=<?= $post_pkey ?>&action=add_review" style="display:flex;flex:1;">
-                <div class="star-rating">
-                    <?php for($i=5;$i>=1;$i--):?>
-                    <input type="radio" id="r<?=$i?>" name="rating" value="<?=$i?>"
-                        <?= (isset($_POST['rating'])&&$_POST['rating']==$i)?'checked':''?>>
-                    <label for="r<?=$i?>">★</label>
-                    <?php endfor;?>
-                </div>
-                <textarea name="comment"
-                    placeholder="나의 핑계 사용 리뷰 남기기"><?=htmlspecialchars($_POST['comment']??'')?></textarea>
-                <button type="submit" name="submit_review">등록</button>
-            </form>
-        </div>
+        <section id="reviews-wrapper" class="<?= $has_reviews ? 'has-reviews' : 'no-reviews'?>">        <div id="review-bar" style="display:none;">
+            <div id="review-bar" style="display:none;">
+                <form method="post" action="?id=<?= $post_pkey ?>&action=add_review" style="display:flex;flex:1;">
+                    <div class="star-rating">
+                        <?php for($i=5;$i>=1;$i--):?>
+                        <input type="radio" id="r<?=$i?>" name="rating" value="<?=$i?>"
+                            <?= (isset($_POST['rating'])&&$_POST['rating']==$i)?'checked':''?>>
+                        <label for="r<?=$i?>">★</label>
+                        <?php endfor;?>
+                    </div>
+                    <textarea name="comment" placeholder="나의 핑계 사용 리뷰 남기기"><?=htmlspecialchars($_POST['comment']??'')?></textarea>
+                    <button type="submit" name="submit_review">등록</button>
+                </form>
+            </div>
         <div id="review-list">
             <?php foreach($reviews as $r):?>
             <div class="review-item">
