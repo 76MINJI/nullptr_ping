@@ -15,13 +15,43 @@ if (!isset($_SESSION['id'])) {
 }
 
 // 3) 조회할 글의 pkey 결정 
-$pkey = isset($_GET['id']) ? (int)$_GET['id'] : 1;
-$user_pkey = isset($_SESSION['user_pkey']) ? (int)$_SESSION['user_pkey'] : 0;
+if (isset($_GET['id'])) {
+    $pkey = (int)$_GET['id'];
+} else {
+    // id가 없으면 회부수 2 이상인 글 중 1개를 가져옴
+    $pkey = 0;
 
-if ($user_pkey <= 0) {
-    die("잘못된 로그인 정보입니다. 다시 로그인해주세요.");
+    $sql = "SELECT excuse_pkey, SUM(count) AS total_count
+            FROM judgement_icon
+            GROUP BY excuse_pkey
+            HAVING total_count >= 2
+            ORDER BY excuse_pkey DESC
+            LIMIT 1";
+    $res = $conn->query($sql);
+    if ($row = $res->fetch_assoc()) {
+        $pkey = (int)$row['excuse_pkey'];
+    }
 }
 
+$user_pkey = isset($_SESSION['user_pkey']) ? (int)$_SESSION['user_pkey'] : 0;
+
+// 재판 회부 수 확인
+$stmt = $conn->prepare("SELECT SUM(count) FROM judgement_icon WHERE excuse_pkey = ?");
+$stmt->bind_param("i", $pkey);
+$stmt->execute();
+$stmt->bind_result($trial_count);
+$stmt->fetch();
+$stmt->close();
+
+
+// 회부 수가 2 미만이면 해당 글은 재판에 부적합하므로 종료
+if ((int)$trial_count < 2) {
+    echo "<script>
+        alert('이 글은 아직 재판에 회부된 횟수가 부족하여 재판을 진행할 수 없습니다.');
+        history.back();
+    </script>";
+    exit;
+}
 
 // 4) 글 내용 + 태그 + 해답 조회
 $sql = "
@@ -42,8 +72,9 @@ LEFT JOIN sub_tags st_place  ON st_place.pkey  = (s.combo_key >> 18)
 LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
-WHERE ep.pkey = ?
-";
+-- ✅ 재판 회부 수를 집계해서 2 이상인 글만 필터링
+WHERE ep.pkey = ?";
+
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -62,6 +93,7 @@ if (!$post) {
     </script>";
     exit;
 }
+
 
 $base_pkey = (int)$post['base_pkey'];
 

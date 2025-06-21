@@ -295,12 +295,20 @@ while ($row = mysqli_fetch_assoc($result)) {
     echo "<a href='Otherdetailping.php?id={$pkey}' class='ping-card-link'>";
     echo "<div class='ping-card'>";
     
-    // 이미지 영역
     echo "<div class='image-wrapper'>";
-    if ($row['url']) {
-        echo "<img src='" . htmlspecialchars($row['url']) . "' />";
+if ($row['url']) {
+    $filename = basename($row['url']);  // ex: company.png
+
+    $image_path = $_SERVER['DOCUMENT_ROOT'] . "/dba/nullptr/post_images/" . $filename;
+    $web_path = "/dba/nullptr/post_images/" . $filename;
+
+    if (file_exists($image_path)) {
+        echo "<img src='" . htmlspecialchars($web_path) . "' />";
+    } else {
+        echo "<img src='/dba/nullptr/post_images/default.png' alt='이미지를 찾을 수 없습니다.' />";
     }
-    echo "</div>";
+}
+echo "</div>";
 
 
     // 메타태그 + 날짜

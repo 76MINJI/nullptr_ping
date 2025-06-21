@@ -77,7 +77,7 @@
         <div class="login-container">
             <h3>로그인</h3>
             <p>핑계핑에 오신 걸 환영한다핑!</p>
-            <form action="/Request_login.php" method="post">
+            <form action="Request_login.php" method="post">
                 <div>
                     <label for="id">ID</label>
                     <input type="text" name="id" required>
