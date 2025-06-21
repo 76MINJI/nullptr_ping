@@ -568,7 +568,7 @@ $stmt->close();
         </form>
       </div>
       <div id="review-list">
-        <!— <?php foreach($reviews as $r):?> —>
+        <?php foreach($reviews as $r):?>
           <div class="review-item">
             <div class="rating">★ <?=$r['rating']?></div>
             <div class="content-wrapper">
@@ -579,7 +579,7 @@ $stmt->close();
               <div class="text"><?=nl2br(htmlspecialchars($r['content']))?></div>
             </div>
           </div>
-        <!— <?php endforeach;?> —>
+        <?php endforeach;?>
       </div>
     </section>
 <script>
