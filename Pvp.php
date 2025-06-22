@@ -1,11 +1,7 @@
 <?php
-// Pvp.php
-
-// 1) 세션 및 DB 설정
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'db-config.php';
 
-// 2) 로그인 체크
 if (!isset($_SESSION['id'])) {
     echo "<script>
         alert('로그인이 필요합니다.');
@@ -14,11 +10,9 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
-// 3) 조회할 글의 pkey 결정 
 if (isset($_GET['id'])) {
     $pkey = (int)$_GET['id'];
 } else {
-    // id가 없으면 회부수 2 이상인 글 중 1개를 가져옴
     $pkey = 0;
 
     $sql = "SELECT excuse_pkey, SUM(count) AS total_count
@@ -35,7 +29,6 @@ if (isset($_GET['id'])) {
 
 $user_pkey = isset($_SESSION['user_pkey']) ? (int)$_SESSION['user_pkey'] : 0;
 
-// 재판 회부 수 확인
 $stmt = $conn->prepare("SELECT SUM(count) FROM judgement_icon WHERE excuse_pkey = ?");
 $stmt->bind_param("i", $pkey);
 $stmt->execute();
@@ -43,8 +36,6 @@ $stmt->bind_result($trial_count);
 $stmt->fetch();
 $stmt->close();
 
-
-// 회부 수가 2 미만이면 해당 글은 재판에 부적합하므로 종료
 if ((int)$trial_count < 2) {
     echo "<script>
         alert('이 글은 아직 재판에 회부된 횟수가 부족하여 재판을 진행할 수 없습니다.');
@@ -53,7 +44,6 @@ if ((int)$trial_count < 2) {
     exit;
 }
 
-// 4) 글 내용 + 태그 + 해답 조회
 $sql = "
 SELECT
     ep.base_pkey,
@@ -72,7 +62,7 @@ LEFT JOIN sub_tags st_place  ON st_place.pkey  = (s.combo_key >> 18)
 LEFT JOIN sub_tags st_person ON st_person.pkey = ((s.combo_key >> 12) & 63)
 LEFT JOIN sub_tags st_time   ON st_time.pkey   = ((s.combo_key >> 6) & 63)
 LEFT JOIN sub_tags st_mood   ON st_mood.pkey   = (s.combo_key & 63)
--- ✅ 재판 회부 수를 집계해서 2 이상인 글만 필터링
+-- 재판 회부 수 집계 -> 2 이상인 글만 필터링
 WHERE ep.pkey = ?";
 
 $stmt = $conn->prepare($sql);
@@ -85,7 +75,6 @@ $stmt->execute();
 $post = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-// 5) 존재하지 않는 글 처리
 if (!$post) {
     echo "<script>
         alert('존재하지 않는 글입니다.');
@@ -97,14 +86,12 @@ if (!$post) {
 
 $base_pkey = (int)$post['base_pkey'];
 
-// 6) 투표 처리
 if (isset($_GET['vote']) && in_array($_GET['vote'], ['0','1'])) {
     $_SESSION['last_vote_type'] = (int)$_GET['vote'];
     header("Location: Pvp.php?id={$pkey}");
     exit;
 }
 
-// 7) 태그 배열 생성
 $tags = array_filter([
     $post['tag_place'],
     $post['tag_person'],
@@ -114,7 +101,6 @@ $tags = array_filter([
 $postContent = $post['post_content'];
 $solution = $post['solution_content'] ?? '';
 
-// 8) 투표 결과 집계
 $sqlVote = "
     SELECT judgement_type, SUM(vote_count) AS cnt
     FROM judgements
@@ -138,13 +124,11 @@ $totalVotes = $notGuilty + $guilty;
 $pctNot = $totalVotes > 0 ? round($notGuilty / $totalVotes * 100) : 50;
 $pctGuilty = 100 - $pctNot;
 
-// 9) 댓글 등록 처리
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     $ctype = (int)($_SESSION['last_vote_type'] ?? -1);
     $ctext = trim($_POST['content'] ?? '');
 
     if ($ctype !== -1 && $ctext !== '') {
-        // 0. 투표 중복 여부 확인
         $stmtDupCheck = $conn->prepare("
             SELECT COUNT(*) FROM judgements_replies 
             WHERE excuse_pkey = ? AND user_pkey = ?
@@ -164,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         }
 
         if ($existing_jid) {
-            // 1. 이미 투표한 경우 → 기존 투표 갱신
             $stmtUpdate = $conn->prepare("
                 UPDATE judgements 
                 SET judgement_type = ?, vote_count = 1 
@@ -174,9 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
             $stmtUpdate->execute();
             $stmtUpdate->close();
 
-            $jid = $existing_jid; // 나중에 댓글에 넣기 위함
+            $jid = $existing_jid; 
         } else {
-            // 2. 처음 투표하는 경우 → INSERT
             $stmtBase = $conn->prepare("INSERT INTO base_entity (insert_date) VALUES (NOW())");
             $stmtBase->execute();
             $new_base_pkey = $conn->insert_id;
@@ -191,14 +173,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
             $jid = $conn->insert_id;
             $stmtInsert->close();
         }
-
-        // 3. base_entity 생성 (댓글용)
         $stmtBaseReply = $conn->prepare("INSERT INTO base_entity (insert_date) VALUES (NOW())");
         $stmtBaseReply->execute();
         $reply_base_pkey = $conn->insert_id;
         $stmtBaseReply->close();
-
-        // 4. judgements_replies INSERT
         $ins = $conn->prepare("INSERT INTO judgements_replies
             (base_pkey, excuse_pkey, judgement_pkey, user_pkey, content, vote)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -212,7 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     }
 }
 
-// 10) 댓글 불러오기
 $comments = [];
 $sql = "
     SELECT jr.pkey, jr.user_pkey, u.name AS username, jr.content, jr.vote, be.insert_date
@@ -282,7 +259,7 @@ $stmt->close();
 
         .vote-container {
             position: relative;
-            width: 90%;     /* 전체 고정폭 */
+            width: 90%;  
             height: 50px;
             margin: 20px auto 8px;
             border-radius: 6px;
@@ -297,8 +274,8 @@ $stmt->close();
             text-decoration: none;
         }
 
-        .vote-left  { background: #5ab9ea; }   /* 파란색 */
-        .vote-right { background: #ec6b6b; }   /* 분홍색 */
+        .vote-left  { background: #5ab9ea; }  
+        .vote-right { background: #ec6b6b; }  
         .vote-info {
             display: flex;
             justify-content: space-between;
@@ -313,18 +290,17 @@ $stmt->close();
             padding: 6px 0;
         }
         .vote-info-item.left {
-            text-align: left;       /* 왼쪽 정렬 */
+            text-align: left;     
         }
 
         .vote-info-item.right {
-            text-align: right;      /* 오른쪽 정렬 */
+            text-align: right;    
         }
 
         .inner {
             text-align: center;
         }
 
-        /* === 댓글 기능 스타일 추가 === */
         .comment-section {
             max-width: 90%;
             margin: 20px auto 40px;
@@ -390,7 +366,6 @@ $stmt->close();
     <div class="main-title">핑계 재판소</div>
     <div id="container">
         <section id="detail">
-        <!-- 상황 태그 -->
         <div class="tags">
             <strong>상황:</strong>
             <?php foreach ($tags as $tag): ?>
@@ -398,7 +373,6 @@ $stmt->close();
             <?php endforeach; ?>
         </div>
 
-        <!-- 설명 -->
         <div class="description">
             <strong>설명:</strong>
             <p><?= nl2br(htmlspecialchars($postContent)) ?></p>
@@ -447,8 +421,6 @@ $stmt->close();
         <button type="submit" name="submit_comment" <?= isset($_SESSION['last_vote_type']) ? '' : 'disabled' ?>>등록</button>
     </form>
 
-    <!-- ✅ 댓글 목록 -->
-<!-- ✅ 댓글 목록 -->
     <?php if (!empty($comments)): ?>
         <div class="comment-list">
             <?php foreach ($comments as $c): ?>

@@ -17,7 +17,7 @@ if (!isset($_SESSION['id'])) {
 $user_id = intval($_SESSION['user_pkey']);
 
 
-// ✅ 사용자의 핑계 불러오기 쿼리
+// 사용자의 핑계 불러오기 쿼리
 $sql = "SELECT
     ep.pkey AS excuse_pkey,
     be.insert_date,
@@ -42,7 +42,7 @@ if (!$result) {
     die("쿼리 실패: " . mysqli_error($conn));
 }
 
-// ✅ 날짜별로 그룹핑
+// 날짜별
 $pings_by_date = [];
 while ($row = mysqli_fetch_assoc($result)) {
     $date = date('Y-m-d', strtotime($row['insert_date']));
@@ -208,37 +208,37 @@ while ($row = mysqli_fetch_assoc($result)) {
                     <th>토요일</th>
                 </tr>
                 <?php
-      $today = new DateTime('first day of this month');
-      $start_day = $today->format('w');
-      $days_in_month = $today->format('t');
-      $calendar = array_fill(0, $start_day, '');
+                    $today = new DateTime('first day of this month');
+                    $start_day = $today->format('w');
+                    $days_in_month = $today->format('t');
+                    $calendar = array_fill(0, $start_day, '');
 
-      for ($i = 1; $i <= $days_in_month; $i++) {
-        $calendar[] = $i;
-      }
+                    for ($i = 1; $i <= $days_in_month; $i++) {
+                        $calendar[] = $i;
+                    }
 
-      $rows = array_chunk($calendar, 7);
+                    $rows = array_chunk($calendar, 7);
 
-      foreach ($rows as $week) {
-        echo "<tr>";
-        foreach ($week as $day) {
-          $date_key = $day ? $today->format("Y-m") . '-' . str_pad($day, 2, '0', STR_PAD_LEFT) : '';
-          echo "<td>";
-          if ($day) {
-            echo "<div class='cell-date'>{$day}</div>";
-            if (isset($pings_by_date[$date_key])) {
-              echo "<div class='cell-stars'>";
-              foreach ($pings_by_date[$date_key] as $ping) {
-                echo "★ " . intval($ping['rating']) . "<br>";
-              }
-              echo "</div>";
-            }
-          }
-          echo "</td>";
-        }
-        echo "</tr>";
-      }
-      ?>
+                    foreach ($rows as $week) {
+                        echo "<tr>";
+                        foreach ($week as $day) {
+                            $date_key = $day ? $today->format("Y-m") . '-' . str_pad($day, 2, '0', STR_PAD_LEFT) : '';
+                            echo "<td>";
+                            if ($day) {
+                                echo "<div class='cell-date'>{$day}</div>";
+                                if (isset($pings_by_date[$date_key])) {
+                                    echo "<div class='cell-stars'>";
+                                    foreach ($pings_by_date[$date_key] as $ping) {
+                                        echo "★ " . intval($ping['rating']) . "<br>";
+                                    }  
+                                    echo "</div>";
+                                }
+                            }
+                        echo "</td>";
+                        }
+                        echo "</tr>";
+                    }
+                ?>
             </table>
         </div>
 

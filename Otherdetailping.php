@@ -12,21 +12,18 @@ if ($user_pkey === null) {
     exit;
 }
 
-
-// ① URL 파라미터에서 pkey 가져오기
 $pkey = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($pkey <= 0) {
     echo "잘못된 접근입니다.";
     exit;
 }
 
-// ② 글 내용 불러오기
 $sql = "SELECT
             ep.base_pkey,
             ep.content AS post_content,
             ep.user_pkey,
             be.insert_date,
-            s.content AS solution_content,  -- ← 해답 본문 가져오기
+            s.content AS solution_content,  -- 해답 본문 가져오기
             st_place.sub_classification  AS tag_place,
             st_person.sub_classification AS tag_person,
             st_time.sub_classification   AS tag_time,
@@ -51,17 +48,12 @@ if (!$post) {
     exit;
 }
 
-$current_user_pkey = $_SESSION['user_pkey'] ?? 0;  // 현재 로그인 사용자
+$current_user_pkey = $_SESSION['user_pkey'] ?? 0;  
 $post_pkey = $pkey;
 $base_pkey = $post['base_pkey'];
 $is_owner = ($post['user_pkey'] ?? -1) == $current_user_pkey;
 
-// ㅡ 이모티콘
-// 글의 pkey는 URL로부터
-// $post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
-//$post_pkey = (int)($_GET['id'] ?? 0);
-
-// ── 클릭 처리 ──
+// 클릭 처리 
 $clicked_icon = isset($_GET['icon']) ? (int)$_GET['icon'] : 0;
 
 if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
@@ -80,7 +72,7 @@ if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
     // excuse_pkey 할당
     $excuse_pkey = $pkey;
 
-    // 중복 클릭 방지 (옵션)
+    // 중복 클릭 방지
     $checkSql  = "SELECT pkey FROM {$icon_table} WHERE base_pkey = ? AND user_pkey = ? LIMIT 1";
     $checkStmt = $conn->prepare($checkSql);
     $checkStmt->bind_param("ii", $base_pkey, $user_pkey);
@@ -99,9 +91,7 @@ if ($clicked_icon >= 1 && $clicked_icon <= 5 && !$is_owner) {
     exit;
 }
 
-
-
-// ── 이모션 개수 불러오기 ──
+// 이모지 개수 불러오기
 $emotion_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
 $placeholders = implode(',', array_fill(0, count($emotion_counts), '?'));
 $sql2 = "
@@ -128,8 +118,6 @@ while ($stmt2->fetch()) {
 }
 $stmt2->close();
 
-
-// 해당 글의 base_pkey 가져오기
 //$sql = "SELECT base_pkey FROM excuse_posts WHERE pkey = ?";
 //$stmt = $conn->prepare($sql);
 $stmt = $conn->prepare("SELECT base_pkey, user_pkey FROM excuse_posts WHERE pkey = ?");
@@ -140,10 +128,10 @@ $stmt->bind_result($base_pkey, $owner_user_pkey);
 $stmt->fetch();
 $stmt->close();
 
-// 본인 글 여부
 $is_owner = ($owner_user_pkey === $current_user_pkey);
 $user_pkey = $_SESSION['user_pkey'] ?? 0;
-// ── 리뷰 등록 처리 ──
+
+//  리뷰 등록
 $error = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
   $rating  = intval($_POST['rating'] ?? 0);
@@ -164,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
     $error = "별점(1~5)과 리뷰 내용을 모두 입력해주세요.";
   }
   
-  // ── 리뷰 목록 로드 ──
+  // 리뷰 목록 로드
   $reviews = [];
   $has_reviews = count($reviews) > 0;
   $stmt = $conn->prepare("
@@ -181,17 +169,7 @@ $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
 
-// 더미 리뷰
-// if (count($reviews)===0) {
-//   $reviews[] = [
-//     'user_pkey'=>0,
-//     'username'=>'테스트유저',
-//     'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-//     'rating'=>4,
-//       'insert_date'=>date('Y-m-d H:i:s'),
-//     ];
-//   }
-  // ── 재판회부 아이콘 ──
+  // 재판회부 아이콘
   $excuse_pkey = $_GET['id'] ?? null;
   $clicked_judgement = isset($_GET['judgement']) ? true : false;
   
@@ -220,11 +198,7 @@ $stmt->close();
       }
   }
   
-  
-  
-
-
-// ── 회부 수 조회 ──
+//  회부 수 조회 
 $stmt = $conn->prepare("SELECT SUM(count) FROM judgement_icon WHERE base_pkey = ? AND excuse_pkey = ?");
 $stmt->bind_param("ii", $base_pkey, $excuse_pkey);
 $stmt->execute();
@@ -234,7 +208,7 @@ $stmt->close();
 
 
 
-// ── 내가 이미 회부했는지 여부 확인 (버튼 비활성화용) ──
+// 회부 여부 확인
 $stmt = $conn->prepare("SELECT COUNT(*) FROM judgements WHERE base_pkey = ? AND user_pkey = ? AND judgement_type = 1");
 $stmt->bind_param("ii", $base_pkey, $current_user_pkey);
 $stmt->execute();
@@ -287,9 +261,7 @@ $stmt->close();
         color: #666;
     }
 
-    /* ── 재판 회부 버튼  ── */
     .trial-btn-wrapper {
-        /* position: absolute; */
         margin-left: auto;
         bottom: 20px;  
         right: 20px;   
@@ -304,8 +276,8 @@ $stmt->close();
         border-radius: 4px;
         font-size: 1rem;
         font-weight: bold;
-        cursor: pointer;     /* 클릭 불가
-        /*opacity: 0.6;        /* 비활성화 느낌 */
+        cursor: pointer;     
+        /*opacity: 0.6;        /* 비활성화 */
     }
 
     .trial-btn .label {
@@ -439,20 +411,20 @@ $stmt->close();
         </div>
       <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($post['post_content']))?></p>
       <div class="emotions-container">
-            <!-- 1) “유용해요” (icon=1) -->
+            <!-- 1)유용해요-->
             <div class="emotion-item">
               <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=1" title="유용해요 누르기">
                   <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
                 </a>
               <?php else: ?>
-              <img src="emotions/useful.png" alt="유용해요" class="emotion-icon"> <!-- 본인은 클릭 못함 -->
+              <img src="emotions/useful.png" alt="유용해요" class="emotion-icon">
             <?php endif; ?>
             <div class="emotion-label">유용해요</div>
             <div class="emotion-count"><?= $emotion_counts[1] ?>개</div>
             </div>
 
-            <!-- 2) “웃겨요” (icon=2) -->
+            <!-- 2)웃겨요 -->
             <div class="emotion-item">
               <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=2" title="웃겨요 누르기">
@@ -465,7 +437,7 @@ $stmt->close();
                 <div class="emotion-count"><?= $emotion_counts[2] ?>개</div>
             </div>
 
-            <!-- 3) “별로예요” (icon=3) -->
+            <!-- 3)별로예요 -->
             <div class="emotion-item">
               <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=3" title="별로예요 누르기">
@@ -478,7 +450,7 @@ $stmt->close();
                 <div class="emotion-count"><?= $emotion_counts[3] ?>개</div>
             </div>
 
-            <!-- 4) “인정해요” (icon=4) -->
+            <!-- 4) 인정해요 -->
             <div class="emotion-item">
               <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=4" title="인정해요 누르기">
@@ -491,7 +463,7 @@ $stmt->close();
                 <div class="emotion-count"><?= $emotion_counts[4] ?>개</div>
             </div>
 
-            <!-- 5) “화나요” (icon=5) -->
+            <!-- 5) 화나요 -->
             <div class="emotion-item">
               <?php if (!$is_owner): ?>
                 <a href="?id=<?= $post_pkey ?>&icon=5" title="화나요 누르기">
@@ -503,7 +475,7 @@ $stmt->close();
                 <div class="emotion-label">화나요</div>
                 <div class="emotion-count"><?= $emotion_counts[5] ?>개</div>
             </div>
-        <!-- 재판 회부 버튼 -->
+        <!-- 재판 회부 -->
         <div class="trial-btn-wrapper">
           <?php if (!$is_owner): ?>
             <?php if (!$already_clicked): ?>
@@ -513,7 +485,6 @@ $stmt->close();
                   <span class="count"><?= $trial_count ?></button></span>
               </a>
             <?php else: ?>
-              <!-- 이미 회부했으면 클릭 시 JS 경고창만 띄움 -->
               <button class="trial-btn" onclick="alert('재판 회부는 1회만 가능합니다.')" return false;>
                 <span class="label">재판 회부 </span>
                 <span class="count"><?= $trial_count ?></button></span>

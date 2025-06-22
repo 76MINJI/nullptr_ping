@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/db-config.php'; // ✅ DB 연결 포함
+require_once __DIR__ . '/db-config.php'; 
 
 if (!isset($_SESSION['id'])) {
     echo "<script>

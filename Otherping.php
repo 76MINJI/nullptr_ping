@@ -297,7 +297,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     
     echo "<div class='image-wrapper'>";
 if ($row['url']) {
-    $filename = basename($row['url']);  // ex: company.png
+    $filename = basename($row['url']); 
 
     $image_path = $_SERVER['DOCUMENT_ROOT'] . "/dba/nullptr/post_images/" . $filename;
     $web_path = "/dba/nullptr/post_images/" . $filename;

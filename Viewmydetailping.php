@@ -19,7 +19,7 @@ if ($action === 'delete') {
     header("Location: Viewmyping.php"); exit;
 }
 
-// ── 게시물 로드 ──
+//  게시물 로드
 $stmt = $conn->prepare("
     SELECT ep.base_pkey, ep.sol_pkey, ep.user_pkey, ep.content, ep.status, be.insert_date,
         s.combo_key, s.sub_pkey
@@ -49,12 +49,12 @@ function decodeComboKey($combo_key) {
 
 function getSubTagName($conn, $pkey) {
     $name = null;
-  $stmt = $conn->prepare("SELECT sub_classification FROM sub_tags WHERE pkey = ?");
-  $stmt->bind_param("i", $pkey);
-  $stmt->execute();
-  $stmt->bind_result($name);
-  if ($stmt->fetch()) return $name;
-  return null;
+    $stmt = $conn->prepare("SELECT sub_classification FROM sub_tags WHERE pkey = ?");
+    $stmt->bind_param("i", $pkey);
+    $stmt->execute();
+    $stmt->bind_result($name);
+    if ($stmt->fetch()) return $name;
+    return null;
 }
 
 list($place_pkey, $person_pkey, $time_pkey, $mood_pkey) = decodeComboKey($combo_key);
@@ -63,7 +63,6 @@ $post['tag_person'] = getSubTagName($conn, $person_pkey);
 $post['tag_time']   = getSubTagName($conn, $time_pkey);
 $post['tag_mood']   = getSubTagName($conn, $mood_pkey);
 
-// 
 $solution_text = '';
 if ($sol_pkey) {
     $stmt = $conn->prepare("SELECT content FROM solutions WHERE pkey = ?");
@@ -75,7 +74,6 @@ if ($sol_pkey) {
 }
 
 // ㅡ 이모티콘
-// 글의 pkey는 URL로부터
 //$post_pkey = isset($_GET['pkey']) ? (int)$_GET['pkey'] : 0;
 
 // 해당 글의 base_pkey 가져오기
@@ -120,19 +118,19 @@ foreach ($icon_tables as $key => $info) {
     $stmt->close();
 }
 
-// ── 리뷰 등록 처리 ──
+// 리뷰 등록 처리
 $error = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
     $rating  = intval($_POST['rating'] ?? 0);
     $comment = trim($_POST['comment'] ?? '');
     if ($rating>=1 && $rating<=5 && $comment!=='') {
         $ins = $conn->prepare("
-          INSERT INTO reviews
+            INSERT INTO reviews
             (base_pkey, user_pkey, post_pkey, content, rating, status, view_count)
-          VALUES (?, ?, ?, ?, ?, 1, 0)
+            VALUES (?, ?, ?, ?, ?, 1, 0)
         ");
         $ins->bind_param("iiisi",
-          $base_pkey, $user_pkey, $post_pkey, $comment, $rating
+            $base_pkey, $user_pkey, $post_pkey, $comment, $rating
         );
         $ins->execute(); $ins->close();
         header("Location: Viewmydetailping.php?id={$post_pkey}");
@@ -141,10 +139,10 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_review'])) {
     $error = "별점(1~5)과 리뷰 내용을 모두 입력해주세요.";
 }
 
-// ── 리뷰 목록 로드 ──
+// 리뷰 목록 로드 
 $reviews = [];
 $stmt = $conn->prepare("
-  SELECT r.user_pkey, u.name AS username, r.content, r.rating, be.insert_date
+    SELECT r.user_pkey, u.name AS username, r.content, r.rating, be.insert_date
     FROM reviews AS r
     JOIN users       AS u  ON r.user_pkey = u.pkey
     JOIN base_entity AS be ON r.base_pkey  = be.pkey
@@ -156,21 +154,9 @@ $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) $reviews[] = $row;
 $stmt->close();
-
-// 더미 리뷰
-// if (count($reviews)===0) {
-//     $reviews[] = [
-//       'user_pkey'=>0,
-//       'username'=>'테스트유저',
-//       'content'=>'[샘플 리뷰] 화면 렌더링 확인용',
-//       'rating'=>4,
-//       'insert_date'=>date('Y-m-d H:i:s'),
-//     ];
-// }
-
 $show_form = ($action==='add_review');
 
-// ── 회부 수 조회 ──
+//  회부 수 조회 
 $stmt = $conn->prepare("SELECT COUNT(*) FROM judgement_icon
     WHERE base_pkey = ? AND excuse_pkey = ? AND user_pkey != ?
 ");
@@ -210,44 +196,6 @@ if (!$trial_count) $trial_count = 0;
         font-weight: 300;
         font-style: normal;
     }
-
-    /* body {
-        margin: 0;
-        background: #f5f5f5;
-        font-family: 'MainFont-Medium', sans-serif;
-    }
-
-    nav {
-        display: flex;
-        align-items: center;
-        background: #00C3FF;
-        padding: 10px;
-        font-family: 'MainFont-Bold', sans-serif;
-    }
-
-    .nav-logo {
-        display: inline-block;
-        vertical-align: middle;
-        margin-left: 12px;
-        margin-right: 12px;
-    }
-
-    .nav-logo img {
-        height: 32px;
-        width: auto;
-    }
-
-    nav a {
-        color: #f5f5f5;
-        text-decoration: none;
-        font-weight: normal;
-        margin-right: 15px;
-    }
-
-    nav a:last-child {
-        margin-left: auto;
-        margin-right: 12px;
-    } */
 
     #container {
         display: flex;
@@ -305,7 +253,7 @@ if (!$trial_count) $trial_count = 0;
         color: #666;
     }
 
-    /* ── 재판 회부 버튼 (비활성화 상태) ── */
+    /* 재판 회부 버튼 (비활성화 상태)  */
     .trial-btn-wrapper {
         margin-left: auto;
         bottom: 20px;  
@@ -322,39 +270,38 @@ if (!$trial_count) $trial_count = 0;
         font-size: 1rem;
         font-weight: bold;
         cursor: default;     /* 클릭 불가 */
-        /* opacity: 0.6;        /* 비활성화 느낌 */
+        /* opacity: 0.6;        /* 비활성화 */
     }
 
     .trial-btn .label {
-      color: #666;
-      font-weight: bold;
+        color: #666;
+        font-weight: bold;
     }
     .trial-btn .count {
-      font-size: 1rem;
-      color: #4cbfee;
-      font-weight: bold;
+        font-size: 1rem;
+        color: #4cbfee;
+        font-weight: bold;
     }
 
     .trial-btn[disabled] {
     opacity: 0.5;
-    /* cursor: not-allowed; */
     cursor: default;
     }
 
     /* 리뷰 바 & 리스트 */
     #reviews-wrapper {
-      margin: 0 20px 20px;
-      border-radius: 6px;
-      overflow: hidden;
+        margin: 0 20px 20px;
+        border-radius: 6px;
+        overflow: hidden;
     }
     #reviews-wrapper.has-reviews {
-      border: 2px solid #4cbfee;
-      background: #fff;
+        border: 2px solid #4cbfee;
+        background: #fff;
     }
 
     #reviews-wrapper.no-reviews {
-      border: none;
-      background: transparent;
+        border: none;
+        background: transparent;
     }
     #review-bar {
         display:flex; align-items:center;
@@ -442,44 +389,44 @@ if (!$trial_count) $trial_count = 0;
     }
 
     .solution-box {
-      background: white;
-      padding: 14px;
-      /* border-radius: 6px; */
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
-      margin-bottom: 12px;
-      min-height: 100px;
+        background: white;
+        padding: 14px;
+        /* border-radius: 6px; */
+        box-shadow: 0 0 4px rgba(0,0,0,0.1);
+        margin-bottom: 12px;
+        min-height: 100px;
     }
 
     .solution-text {
-      font-size: 15px;
-      line-height: 1.6;
-      color: #333;
-      white-space: pre-line;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #333;
+        white-space: pre-line;
     }
     
     #add-review-btn {
-      text-align: center;
+        text-align: center;
     }
 
     #add-review-btn button {
-      padding: 8px 16px;
-      background: #4cbfee;
-      color: #fff;
-      border: none;
-      font-family: 'MainFont-Medium';
-      font-weight : bold;
-      cursor: pointer;
+        padding: 8px 16px;
+        background: #4cbfee;
+        color: #fff;
+        border: none;
+        font-family: 'MainFont-Medium';
+        font-weight : bold;
+        cursor: pointer;
     }
 
     .top-action-bar {
-      display: flex;
-      /* gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-      font-size: 14px; */
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+        display: flex;
+        /* gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+        font-size: 14px; */
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
     }
 
     .visibility-status {
@@ -493,26 +440,26 @@ if (!$trial_count) $trial_count = 0;
     }
 
     .post-action {
-      background: #4cbfee;
-      color: white;
-      padding: 6px 14px;
-      /* border-radius: 4px; */
-      text-decoration: none;
-      font-weight: bold;
+        background: #4cbfee;
+        color: white;
+        padding: 6px 14px;
+        /* border-radius: 4px; */
+        text-decoration: none;
+        font-weight: bold;
     }
 
     .post-action:hover {
-      background: #4cbfee;
+        background: #4cbfee;
     }
 
     .right-buttons .action-btn {
-      margin-left: 8px;
-      background-color: #4cbfee;
-      color: #fff;
-      padding: 6px 12px;
-      text-decoration: none;
-      /* border-radius: 4px; */
-      font-weight: bold;
+        margin-left: 8px;
+        background-color: #4cbfee;
+        color: #fff;
+        padding: 6px 12px;
+        text-decoration: none;
+        /* border-radius: 4px; */
+        font-weight: bold;
     }
     </style>
     <script>
@@ -534,42 +481,41 @@ if (!$trial_count) $trial_count = 0;
         <section id="detail">
             <!-- 상세 -->
             <div class="status">
-              <p><strong>상황:</strong>
-                  <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
+                <p><strong>상황:</strong>
+                    <span class="tag"><?= htmlspecialchars($post['tag_place'] ?? '') ?></span>
                     <span class="tag"><?= htmlspecialchars($post['tag_person'] ?? '') ?></span>
                     <span class="tag"><?= htmlspecialchars($post['tag_time'] ?? '') ?></span>
                     <span class="tag"><?= htmlspecialchars($post['tag_mood'] ?? '') ?></span>
             </div>
-            <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
-            <div class="top-action-bar">
-                <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
-                <div class="right-buttons">
-                    <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
-                    <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
-                </div>
-            </div>
-            <div class="emotions-container">
-                <?php foreach ($icon_tables as $icon => $info): ?>
-                  <div class="emotion-item">
-                    <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
-                    <div class="emotion-label"><?= $info['label'] ?></div>
-                    <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
-                  </div> 
-                <?php endforeach; ?>
-                <!-- 재판 회부 버튼 -->
-              <div class="trial-btn-wrapper">
-                <button class="trial-btn">
-                  <span class="label">재판 회부 </span>
-                  <span class="count"><?= $trial_count ?></button></span>
-              </div>
-            </div>
+                <p><strong>설명:</strong><br><?= nl2br(htmlspecialchars($description))?></p>
+                    <div class="top-action-bar">
+                        <span class="visibility-status"><?= $post_status == 1 ? '공개' : '비공개' ?></span>
+                        <div class="right-buttons">
+                            <a href="?id=<?= $post_pkey ?>&action=delete" class="post-action">글 삭제</a>
+                            <a href="Updateping.php?id=<?= $post_pkey ?>" class="post-action">글 수정</a>
+                        </div>
+                    </div>
+                    <div class="emotions-container">
+                        <?php foreach ($icon_tables as $icon => $info): ?>
+                        <div class="emotion-item">
+                            <img src="emotions/<?= $info['img'] ?>.png" alt="<?= $info['label'] ?>" class="emotion-icon">
+                            <div class="emotion-label"><?= $info['label'] ?></div>
+                                <div class="emotion-count"><?= $emotion_counts[$icon] ?? 0 ?>개</div>
+                        </div> 
+                        <?php endforeach; ?>
+                        <div class="trial-btn-wrapper">
+                            <button class="trial-btn">
+                            <span class="label">재판 회부 </span>
+                            <span class="count"><?= $trial_count ?></button></span>
+                        </div>
+                    </div>
         </section>
 
         <aside id="sidebar">
             <h3>핑계핑의 해답</h3>
             <div class="solution-box">
-              <p class="solution-text"><?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
-              </p>
+                <p class="solution-text"><?= nl2br(htmlspecialchars($solution_text ?: '[해답 없음]')) ?>
+                </p>
             </div>
             <div id="add-review-btn" style="margin-top:12px;">
                 <button id="btnAddReview" onclick="openReviewBar()" <?= $show_form?'disabled':''?>>
